@@ -25,12 +25,12 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
 
     $nodeConfig = @"
 $COMMENT
-  redis-node-$i:
+  redis-node-${i}:
     image: redis:7-alpine
     container_name: redis-node-$i
     ports:
-      - `"$PORT:$PORT`"
-      - `"$BUS_PORT:$BUS_PORT`"
+      - `"${PORT}:${PORT}`"
+      - `"${BUS_PORT}:${BUS_PORT}`"
     volumes:
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - node-$i-data:/data
