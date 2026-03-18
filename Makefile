@@ -34,11 +34,19 @@ else
 endif
 
 # Colores para output
+ifeq ($(OS),Windows_NT)
+BLUE := 
+GREEN := 
+YELLOW := 
+RED := 
+NC := 
+else
 BLUE := \033[36m
 GREEN := \033[32m
 YELLOW := \033[33m
 RED := \033[31m
-NC := \033[0m # No Color
+NC := \033[0m
+endif
 
 help: ## Muestra esta ayuda
 	@echo "${BLUE}Redis Cluster Laboratory${NC}"
@@ -57,24 +65,28 @@ help: ## Muestra esta ayuda
 	@echo "  ${YELLOW}info${NC}             Muestra información detallada del cluster"
 	@echo "  ${YELLOW}test${NC}             Ejecuta todos los tests"
 	@echo "  ${YELLOW}scenarios${NC}        Muestra escenarios disponibles"
-	@echo "  ${YELLOW}scenario-%${NC}       Ejecuta un escenario específico (ej: make scenario-01)"
+	@echo "  ${YELLOW}scenario-[N]${NC}     Ejecuta un escenario específico (ej: make scenario-01)"
 	@echo "  ${YELLOW}lab${NC}              Entra al bash del contenedor de tests (redis-lab)"
 	@echo "  ${YELLOW}shell${NC}            Accede a un nodo Redis (nodo 1 por defecto)"
-	@echo "  ${YELLOW}shell-%${NC}          Accede a un nodo específico (ej: make shell-2)"
+	@echo "  ${YELLOW}shell-[N]${NC}        Accede a un nodo específico (ej: make shell-2)"
 	@echo "  ${YELLOW}monitor${NC}          Monitorea comandos en tiempo real (nodo 1)"
-	@echo "  ${YELLOW}monitor-%${NC}        Monitorea un nodo específico (ej: make monitor-3)"
+	@echo "  ${YELLOW}monitor-[N]${NC}      Monitorea un nodo específico (ej: make monitor-3)"
 	@echo "  ${YELLOW}monitor-all${NC}      Monitorea TODOS los nodos simultáneamente"
 	@echo "  ${YELLOW}logs${NC}             Muestra logs de todos los nodos"
-	@echo "  ${YELLOW}logs-%${NC}           Muestra logs de un nodo específico"
+	@echo "  ${YELLOW}logs-[N]${NC}         Muestra logs de un nodo específico"
 	@echo "  ${YELLOW}reset${NC}            Limpia todo y reinicia (SHARDS=N)"
 	@echo "  ${YELLOW}install${NC}          Instala dependencias PHP localmente"
 	@echo "  ${YELLOW}setup${NC}            Setup inicial completo"
 
 generate: ## Genera docker-compose y haproxy config
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "if ([int]'$(SHARDS)' -lt 3) { Write-Host '❌ SHARDS debe ser al menos 3' -ForegroundColor Red; exit 1 }"
+else
 	@if [ "$(SHARDS)" -lt 3 ] 2>/dev/null; then \
 		echo "${RED}❌ SHARDS debe ser al menos 3${NC}"; \
 		exit 1; \
 	fi
+endif
 	@$(CMD_GEN_COMPOSE)
 	@$(CMD_GEN_HAPROXY)
 
@@ -82,12 +94,19 @@ up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "${BLUE}🚀 Iniciando Redis Cluster con $(SHARDS) shards ($(TOTAL_NODES) nodos)...${NC}"
 	@docker compose -f $(COMPOSE_FILE) up -d
 	@echo "${YELLOW}⏳ Esperando que los nodos estén listos...${NC}"
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
+else
 	@sleep 3
+endif
 	@echo "${BLUE}🔧 Inicializando cluster...${NC}"
 	@$(CMD_CLUSTER_INIT)
 	@echo "${GREEN}✅ Cluster listo con $(SHARDS) shards!${NC}"
 	@echo ""
 	@echo "Nodos disponibles:"
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "for ($$i=1; $$i -le $(SHARDS); $$i++) { $$PORT=6999+$$i; Write-Host \"  Master $$i`: localhost:$$PORT\" }; for ($$i=1; $$i -le $(SHARDS); $$i++) { $$NODE_NUM=$$i+$(SHARDS); $$PORT=6999+$$NODE_NUM; Write-Host \"  Replica $$i`: localhost:$$PORT\" }"
+else
 	@for i in $$(seq 1 $(SHARDS)); do \
 		PORT=$$((6999 + i)); \
 		echo "  Master $$i: localhost:$$PORT"; \
@@ -97,6 +116,7 @@ up: generate ## Inicia el cluster Redis (SHARDS=N)
 		PORT=$$((6999 + NODE_NUM)); \
 		echo "  Replica $$i: localhost:$$PORT"; \
 	done
+endif
 	@echo ""
 	@echo "HAProxy:"
 	@echo "  Masters (escritura):  localhost:6380  (master.local:6380)"
@@ -106,18 +126,28 @@ up: generate ## Inicia el cluster Redis (SHARDS=N)
 
 down: ## Detiene el cluster
 	@echo "${BLUE}🛑 Deteniendo cluster...${NC}"
+ifeq ($(OS),Windows_NT)
+	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) down) else (echo ⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml... & docker compose down)
+else
 	@if [ -f $(COMPOSE_FILE) ]; then \
 		docker compose -f $(COMPOSE_FILE) down; \
 	else \
 		echo "${YELLOW}⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml...${NC}"; \
 		docker compose down; \
 	fi
+endif
 	@$(CMD_HOSTS_RESTORE)
 	@echo "${GREEN}✅ Cluster detenido${NC}"
 
 status: ## Muestra estado del cluster
 	@echo "${BLUE}📊 Estado del Cluster${NC}"
 	@echo "====================="
+ifeq ($(OS),Windows_NT)
+	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) ps) else (docker compose ps)
+	@echo ""
+	@echo "${BLUE}Nodos del Cluster:${NC}"
+	@powershell -NoProfile -Command "$$out = docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$$null; if ($$LASTEXITCODE -ne 0) { Write-Host 'Cluster no inicializado. Ejecuta: make up' -ForegroundColor Red } else { $$out | Select-Object -First 20 }"
+else
 	@if [ -f $(COMPOSE_FILE) ]; then \
 		docker compose -f $(COMPOSE_FILE) ps; \
 	else \
@@ -126,6 +156,7 @@ status: ## Muestra estado del cluster
 	@echo ""
 	@echo "${BLUE}Nodos del Cluster:${NC}"
 	@docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null | head -20 || echo "${RED}Cluster no inicializado. Ejecuta: make up${NC}"
+endif
 
 test: install ## Ejecuta todos los tests
 	@echo "${BLUE}🧪 Ejecutando tests...${NC}"
@@ -163,12 +194,18 @@ scenario-09: FILE=09-laravel-simulation.php
 
 scenario-%: install ## Ejecuta un escenario específico (ej: make scenario-01)
 	@echo "${BLUE}🎮 Ejecutando Escenario $*...${NC}"
+ifeq ($(OS),Windows_NT)
+	@if "$(FILE)"=="" (echo ❌ Escenario $* no existe & exit /b 1)
+	@echo "${YELLOW}📖 Leyendo documentación del escenario...${NC}"
+	@powershell -NoProfile -Command "docker exec redis-lab head -20 /app/tests/$(FILE) 2>$$null | Select-String -Pattern 'ESCENARIO' -Context 0,15 | ForEach-Object { $$_.Line; $$_.Context.PostContext }"
+else
 	@if [ -z "$(FILE)" ]; then \
 		echo "${RED}❌ Escenario $* no existe${NC}"; \
 		exit 1; \
 	fi
 	@echo "${YELLOW}📖 Leyendo documentación del escenario...${NC}"
 	@docker exec redis-lab head -20 /app/tests/$(FILE) | grep -A 15 "ESCENARIO" || true
+endif
 	@echo ""
 	@echo "${GREEN}▶ Ejecutando código...${NC}"
 	@docker exec -e SHARDS=$(SHARDS) -it redis-lab php /app/tests/$(FILE)
@@ -199,33 +236,53 @@ monitor-all: ## Monitorea TODOS los nodos simultáneamente
 
 reset: generate ## Limpia todo y reinicia (SHARDS=N)
 	@echo "${RED}⚠️  Esto eliminará todos los datos${NC}"
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -Command "$$confirm = Read-Host '¿Continuar? [y/N]'; if ($$confirm -notmatch '^y$$|^Y$$') { exit 1 }"
+	@echo "${BLUE}🧹 Limpiando...${NC}"
+	@docker compose -f $(COMPOSE_FILE) down -v
+	@docker compose -f $(COMPOSE_FILE) up -d
+	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
+else
 	@read -p "¿Continuar? [y/N] " confirm && [ $$confirm = y ] || exit 1
 	@echo "${BLUE}🧹 Limpiando...${NC}"
 	@docker compose -f $(COMPOSE_FILE) down -v
 	@docker compose -f $(COMPOSE_FILE) up -d
 	@sleep 3
+endif
 	@$(CMD_CLUSTER_INIT)
 	@echo "${GREEN}✅ Cluster reiniciado con $(SHARDS) shards${NC}"
 
 logs: ## Muestra logs de todos los nodos
+ifeq ($(OS),Windows_NT)
+	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) logs -f) else (docker compose logs -f)
+else
 	@if [ -f $(COMPOSE_FILE) ]; then \
 		docker compose -f $(COMPOSE_FILE) logs -f; \
 	else \
 		docker compose logs -f; \
 	fi
+endif
 
 logs-%: ## Muestra logs de un nodo específico
+ifeq ($(OS),Windows_NT)
+	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) logs -f redis-node-$*) else (docker compose logs -f redis-node-$*)
+else
 	@if [ -f $(COMPOSE_FILE) ]; then \
 		docker compose -f $(COMPOSE_FILE) logs -f redis-node-$*; \
 	else \
 		docker compose logs -f redis-node-$*; \
 	fi
+endif
 
 install: ## Instala dependencias PHP localmente
+ifeq ($(OS),Windows_NT)
+	@if not exist "vendor" (echo ${BLUE}📦 Instalando dependencias con Composer...${NC} & composer install)
+else
 	@if [ ! -d "vendor" ]; then \
 		echo "${BLUE}📦 Instalando dependencias con Composer...${NC}"; \
 		composer install; \
 	fi
+endif
 
 setup: ## Setup inicial completo
 	@echo "${BLUE}🔧 Setup inicial...${NC}"
