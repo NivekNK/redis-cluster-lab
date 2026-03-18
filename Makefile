@@ -4,12 +4,34 @@
 # Uso: make up SHARDS=N  (default: 1, mínimo: 1)
 # Cada shard = 1 master + 1 replica
 
-.PHONY: help up down status test scenarios shell monitor monitor-all reset setup generate scenario-%
+.PHONY: help up down status test scenarios shell monitor monitor-all reset setup generate scenario-% lab
 
 # Cantidad de shards (masters). Cada shard tiene 1 replica.
 SHARDS ?= 3
 TOTAL_NODES = $(shell echo $$(($(SHARDS) * 2)))
 COMPOSE_FILE = docker-compose.generated.yml
+
+ifeq ($(OS),Windows_NT)
+    CMD_GEN_COMPOSE := powershell.exe -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS $(SHARDS)
+    CMD_GEN_HAPROXY := powershell.exe -ExecutionPolicy Bypass -File .\scripts\generate-haproxy.ps1 -SHARDS $(SHARDS)
+    CMD_CLUSTER_INIT := powershell.exe -ExecutionPolicy Bypass -File .\scripts\cluster-init.ps1 -SHARDS $(SHARDS)
+    CMD_HOSTS_APPLY := powershell.exe -ExecutionPolicy Bypass -File .\scripts\hosts-apply.ps1 -SHARDS $(SHARDS)
+    CMD_HOSTS_RESTORE := powershell.exe -ExecutionPolicy Bypass -File .\scripts\hosts-restore.ps1
+    CMD_MONITOR_ALL := powershell.exe -ExecutionPolicy Bypass -File .\scripts\monitor-all.ps1 -SHARDS $(SHARDS)
+    CMD_RESET := powershell.exe -ExecutionPolicy Bypass -File .\scripts\reset.ps1 -SHARDS $(SHARDS)
+    CMD_SETUP := powershell.exe -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+    CMD_STATUS := powershell.exe -ExecutionPolicy Bypass -File .\scripts\cluster-status.ps1
+else
+    CMD_GEN_COMPOSE := ./scripts/generate-compose.sh $(SHARDS)
+    CMD_GEN_HAPROXY := ./scripts/generate-haproxy.sh $(SHARDS)
+    CMD_CLUSTER_INIT := SHARDS=$(SHARDS) ./scripts/cluster-init.sh
+    CMD_HOSTS_APPLY := SHARDS=$(SHARDS) ./scripts/hosts-apply.sh
+    CMD_HOSTS_RESTORE := ./scripts/hosts-restore.sh
+    CMD_MONITOR_ALL := SHARDS=$(SHARDS) ./scripts/monitor-all.sh
+    CMD_RESET := SHARDS=$(SHARDS) ./scripts/reset.sh
+    CMD_SETUP := ./scripts/setup.sh
+    CMD_STATUS := ./scripts/cluster-status.sh
+endif
 
 # Colores para output
 BLUE := \033[36m
@@ -27,15 +49,34 @@ help: ## Muestra esta ayuda
 	@echo "  Cada shard tiene 1 master + 1 replica"
 	@echo ""
 	@echo "${GREEN}Comandos disponibles:${NC}"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_%.-]+:.*?## / {printf "  ${YELLOW}%-15s${NC} %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "  ${YELLOW}help${NC}             Muestra esta ayuda"
+	@echo "  ${YELLOW}generate${NC}         Genera docker-compose y haproxy config"
+	@echo "  ${YELLOW}up${NC}               Inicia el cluster Redis (SHARDS=N)"
+	@echo "  ${YELLOW}down${NC}             Detiene el cluster"
+	@echo "  ${YELLOW}status${NC}           Muestra estado del cluster"
+	@echo "  ${YELLOW}info${NC}             Muestra información detallada del cluster"
+	@echo "  ${YELLOW}test${NC}             Ejecuta todos los tests"
+	@echo "  ${YELLOW}scenarios${NC}        Muestra escenarios disponibles"
+	@echo "  ${YELLOW}scenario-%${NC}       Ejecuta un escenario específico (ej: make scenario-01)"
+	@echo "  ${YELLOW}lab${NC}              Entra al bash del contenedor de tests (redis-lab)"
+	@echo "  ${YELLOW}shell${NC}            Accede a un nodo Redis (nodo 1 por defecto)"
+	@echo "  ${YELLOW}shell-%${NC}          Accede a un nodo específico (ej: make shell-2)"
+	@echo "  ${YELLOW}monitor${NC}          Monitorea comandos en tiempo real (nodo 1)"
+	@echo "  ${YELLOW}monitor-%${NC}        Monitorea un nodo específico (ej: make monitor-3)"
+	@echo "  ${YELLOW}monitor-all${NC}      Monitorea TODOS los nodos simultáneamente"
+	@echo "  ${YELLOW}logs${NC}             Muestra logs de todos los nodos"
+	@echo "  ${YELLOW}logs-%${NC}           Muestra logs de un nodo específico"
+	@echo "  ${YELLOW}reset${NC}            Limpia todo y reinicia (SHARDS=N)"
+	@echo "  ${YELLOW}install${NC}          Instala dependencias PHP localmente"
+	@echo "  ${YELLOW}setup${NC}            Setup inicial completo"
 
 generate: ## Genera docker-compose y haproxy config
 	@if [ "$(SHARDS)" -lt 3 ] 2>/dev/null; then \
 		echo "${RED}❌ SHARDS debe ser al menos 3${NC}"; \
 		exit 1; \
 	fi
-	@./scripts/generate-compose.sh $(SHARDS)
-	@./scripts/generate-haproxy.sh $(SHARDS)
+	@$(CMD_GEN_COMPOSE)
+	@$(CMD_GEN_HAPROXY)
 
 up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "${BLUE}🚀 Iniciando Redis Cluster con $(SHARDS) shards ($(TOTAL_NODES) nodos)...${NC}"
@@ -43,7 +84,7 @@ up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "${YELLOW}⏳ Esperando que los nodos estén listos...${NC}"
 	@sleep 3
 	@echo "${BLUE}🔧 Inicializando cluster...${NC}"
-	@SHARDS=$(SHARDS) ./scripts/cluster-init.sh
+	@$(CMD_CLUSTER_INIT)
 	@echo "${GREEN}✅ Cluster listo con $(SHARDS) shards!${NC}"
 	@echo ""
 	@echo "Nodos disponibles:"
@@ -61,7 +102,7 @@ up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "  Masters (escritura):  localhost:6380  (master.local:6380)"
 	@echo "  Discovery (lectura): localhost:6381  (clustercfg.local:6381)"
 	@echo ""
-	@SHARDS=$(SHARDS) ./scripts/hosts-apply.sh
+	@$(CMD_HOSTS_APPLY)
 
 down: ## Detiene el cluster
 	@echo "${BLUE}🛑 Deteniendo cluster...${NC}"
@@ -71,7 +112,7 @@ down: ## Detiene el cluster
 		echo "${YELLOW}⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml...${NC}"; \
 		docker compose down; \
 	fi
-	@./scripts/hosts-restore.sh
+	@$(CMD_HOSTS_RESTORE)
 	@echo "${GREEN}✅ Cluster detenido${NC}"
 
 status: ## Muestra estado del cluster
@@ -132,25 +173,29 @@ scenario-%: install ## Ejecuta un escenario específico (ej: make scenario-01)
 	@echo "${GREEN}▶ Ejecutando código...${NC}"
 	@docker exec -e SHARDS=$(SHARDS) -it redis-lab php /app/tests/$(FILE)
 
+lab: ## Entra al bash del contenedor redis-lab (tests)
+	@echo "${BLUE}🧪 Accediendo al contenedor de laboratorio (redis-lab)...${NC}"
+	@docker exec -e SHARDS=$(SHARDS) -it redis-lab bash
+
 shell: ## Accede a un nodo Redis (nodo 1 por defecto)
-	@echo "${BLUE}🐚 Accediendo a redis-node-1:7000...${NC}"
-	@redis-cli -h redis-node-1 -p 7000
+	@echo "${BLUE}🐚 Accediendo a redis-node-1...${NC}"
+	@docker exec -it redis-node-1 redis-cli -p 7000
 
 shell-%: ## Accede a un nodo específico (ej: make shell-2)
-	@echo "${BLUE}🐚 Accediendo a redis-node-$*:$$(($* + 6999))...${NC}"
-	@redis-cli -h redis-node-$* -p $$(($* + 6999))
+	@echo "${BLUE}🐚 Accediendo a redis-node-$*...${NC}"
+	@docker exec -it redis-node-$* redis-cli -p $$(($* + 6999))
 
 monitor: ## Monitorea comandos en tiempo real (nodo 1)
-	@echo "${BLUE}👁️  Monitoreando redis-node-1:7000...${NC}"
+	@echo "${BLUE}👁️  Monitoreando redis-node-1...${NC}"
 	@echo "${YELLOW}Presiona Ctrl+C para salir${NC}"
-	@redis-cli -h redis-node-1 -p 7000 MONITOR
+	@docker exec -it redis-node-1 redis-cli -p 7000 MONITOR
 
 monitor-%: ## Monitorea un nodo específico
-	@echo "${BLUE}👁️  Monitoreando redis-node-$*:$$(($* + 6999))...${NC}"
-	@redis-cli -h redis-node-$* -p $$(($* + 6999)) MONITOR
+	@echo "${BLUE}👁️  Monitoreando redis-node-$*...${NC}"
+	@docker exec -it redis-node-$* redis-cli -p $$(($* + 6999)) MONITOR
 
 monitor-all: ## Monitorea TODOS los nodos simultáneamente
-	@SHARDS=$(SHARDS) ./scripts/monitor-all.sh
+	@$(CMD_MONITOR_ALL)
 
 reset: generate ## Limpia todo y reinicia (SHARDS=N)
 	@echo "${RED}⚠️  Esto eliminará todos los datos${NC}"
@@ -159,7 +204,7 @@ reset: generate ## Limpia todo y reinicia (SHARDS=N)
 	@docker compose -f $(COMPOSE_FILE) down -v
 	@docker compose -f $(COMPOSE_FILE) up -d
 	@sleep 3
-	@SHARDS=$(SHARDS) ./scripts/cluster-init.sh
+	@$(CMD_CLUSTER_INIT)
 	@echo "${GREEN}✅ Cluster reiniciado con $(SHARDS) shards${NC}"
 
 logs: ## Muestra logs de todos los nodos
@@ -184,7 +229,7 @@ install: ## Instala dependencias PHP localmente
 
 setup: ## Setup inicial completo
 	@echo "${BLUE}🔧 Setup inicial...${NC}"
-	@./scripts/setup.sh
+	@$(CMD_SETUP)
 
 info: ## Muestra información del cluster
 	@echo "${BLUE}ℹ️  Información del Cluster${NC}"

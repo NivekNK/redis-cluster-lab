@@ -11,7 +11,7 @@ Este laboratorio te guiará paso a paso para comprender:
 3. **MOVED y ASK** - Redirecciones en cluster
 4. **READONLY** - Por qué ocurre y cómo evitarlo
 5. **CROSSSLOT** - Por qué tus colas fallan
-6. **Failover** - Qué pasa cuando un nodo cae
+6. **Failover** - Qué pasa cuando un nodo cae, simulación y recuperación automática
 
 ## 🚀 Inicio Rápido
 
@@ -50,6 +50,8 @@ Cada shard crea:
 - **HAProxy** en puertos `6380` (masters) y `6381` (discovery)
 
 > **Nota:** Los archivos `docker-compose.generated.yml` y `haproxy.generated.cfg` se generan automáticamente. No los edites manualmente.
+>
+> 🪟 **Usuarios de Windows:** El laboratorio es **100% compatible** con Windows de forma nativa. Si ejecutas `make up` desde PowerShell CMD, se detectará automáticamente tu sistema y se invocarán `.ps1` auto-generadores integrados.
 
 ## 📁 Estructura del Proyecto
 
@@ -103,15 +105,16 @@ redis-cluster-lab/
 | `make test` | Ejecuta todos los tests |
 | `make scenarios` | Muestra escenarios disponibles |
 | `make scenario-NN` | Ejecuta un escenario específico (ej: `make scenario-01`) |
-| `make shell` | Accede a redis-node-1 via redis-cli |
+| `make lab` | Entra a la consola interactiva bash de `redis-lab` (Contenedor PHP PHP 8.2 cli) ideal para testear comandos aislados |
+| `make shell` | Accede a redis-node-1 via redis-cli (ejecutado por docker exec) |
 | `make shell-N` | Accede al nodo N (ej: `make shell-2`) |
 | `make monitor` | Monitorea comandos en tiempo real (nodo 1) |
 | `make monitor-N` | Monitorea un nodo específico (ej: `make monitor-3`) |
-| `make monitor-all` | Monitorea TODOS los nodos simultáneamente con prefijo coloreado |
+| `make monitor-all` | TTY Multiventana monitoreando TODOS los nodos simultáneamente |
 | `make reset SHARDS=N` | Limpia todo y reinicia con N shards |
 | `make logs` | Muestra logs de todos los nodos |
 | `make logs-N` | Muestra logs de un nodo específico (ej: `make logs-2`) |
-| `make install` | Instala dependencias PHP localmente con Composer |
+| `make install` | Instala dependencias PHP localmente (Solo si deseas ejecutar tests locales sin usar docker) |
 | `make setup` | Ejecuta el setup inicial completo |
 | `make info` | Muestra slots y nodos del cluster |
 
@@ -150,8 +153,9 @@ Comprende por qué Laravel usa `{default}` en las colas.
 ## 🔧 Requisitos
 
 - Docker y Docker Compose
-- PHP 8.0+ (opcional, para tests nativos)
+- **No se requiere Node.js, PHP ni `redis-cli` en tu máquina anfitriona** (TODO corre en sus propios Dockers de forma transparente para las directivas interactivas - `make shell`, `monitor`, `lab`, etc).
 - Make (opcional, para comandos simplificados)
+- (Windows) Si te encuentras en ambiente Windows, los comandos `make` levantarán las implementaciones `.ps1` en PowerShell integradas.
 
 ## 📝 Licencia
 
