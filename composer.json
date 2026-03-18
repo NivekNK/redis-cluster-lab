@@ -1,0 +1,16 @@
+{
+    "name": "redis-cluster-lab/lab",
+    "description": "Laboratorio pedagógico de Redis Cluster",
+    "type": "project",
+    "require": {
+        "predis/predis": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "RedisLab\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "php tests/run-all.php"
+    }
+}

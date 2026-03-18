@@ -1,0 +1,6 @@
+# Archivos generados dinámicamente
+docker-compose.generated.yml
+haproxy.generated.cfg
+
+# PHP
+/vendor/
