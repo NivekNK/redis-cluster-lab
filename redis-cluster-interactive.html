@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Redis Cluster — Simulador Interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ff:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeede8;
+  --t1:#1a1a18;--t2:#6b6b66;
+  --brd:rgba(0,0,0,0.10);--brd2:rgba(0,0,0,0.20);
+  --r:6px;--rl:10px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1a;--bg2:#242422;--bg3:#2e2e2b;--t1:#e8e6de;--t2:#9a9890;--brd:rgba(255,255,255,0.08);--brd2:rgba(255,255,255,0.18)}
+}
+body{font-family:var(--ff);font-size:13px;color:var(--t1);background:var(--bg);min-height:100vh;padding:1.5rem 1rem}
+.container{max-width:980px;margin:0 auto}
+.page-title{font-size:18px;font-weight:500;margin-bottom:3px}
+.page-sub{font-size:13px;color:var(--t2);margin-bottom:1.2rem}
+.top-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;border:0.5px solid var(--brd);font-family:var(--fm)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-g{background:#1D9E75}.dot-r{background:#E24B4A}
+.panel-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.panel-row{grid-template-columns:1fr}}
+
+/* console */
+.console-wrap{border:0.5px solid var(--brd2);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column}
+.con-header{background:var(--bg2);padding:7px 12px;font-size:11px;color:var(--t2);border-bottom:0.5px solid var(--brd);display:flex;align-items:center;gap:6px;font-family:var(--fm)}
+.mac-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.con-body{background:#0e1117;padding:10px 12px;font-family:var(--fm);font-size:12px;height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.con-body::-webkit-scrollbar{width:4px}.con-body::-webkit-scrollbar-thumb{background:#2d3748}
+.cl{display:flex;gap:6px;line-height:1.75;flex-wrap:wrap}
+.ct{color:#4b5563;min-width:56px;flex-shrink:0;font-size:11px}
+.cv{color:#f9fafb}.cok{color:#34d399}.cerr{color:#f87171}.cwarn{color:#fbbf24}
+.cask{color:#a78bfa}.cmov{color:#fb923c}.csys{color:#6b7280;font-style:italic}.cc{color:#60a5fa}
+.cdisconn{color:#fb923c;font-style:italic}.creconn{color:#34d399;font-style:italic}
+.quick-cmds{display:flex;gap:4px;flex-wrap:wrap;padding:6px 10px;border-top:0.5px solid var(--brd);background:var(--bg);align-items:center}
+.qbtn{padding:3px 8px;border-radius:var(--r);border:0.5px solid var(--brd);font-size:11px;font-family:var(--fm);cursor:pointer;background:transparent;color:var(--t2);transition:all .15s}
+.qbtn:hover{background:var(--bg2);color:var(--t1)}
+.qbtn.event{border-color:#EF9F27;color:#EF9F27}
+.qbtn.event:hover{background:#FAEEDA;color:#412402}
+@media(prefers-color-scheme:dark){.qbtn.event:hover{background:#412402;color:#FAC775}}
+.con-input-row{border-top:0.5px solid var(--brd);display:flex;align-items:center;background:var(--bg)}
+.con-prompt{padding:8px 0 8px 12px;font-family:var(--fm);font-size:12px;color:#1D9E75;white-space:nowrap}
+.con-input{flex:1;padding:8px 8px;font-family:var(--fm);font-size:12px;background:transparent;border:none;outline:none;color:var(--t1)}
+.con-send{padding:6px 12px;background:transparent;border:none;border-left:0.5px solid var(--brd);color:var(--t2);cursor:pointer;font-size:11px;font-family:var(--ff);white-space:nowrap}
+.con-send:hover{background:var(--bg2);color:var(--t1)}
+
+/* connect form */
+.connect-form{padding:2px 0}
+.cf-lbl{color:#6b7280;margin-bottom:8px;font-size:11px}
+.fqdn-opts{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.fqdn-opt{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:0.5px solid #374151;border-radius:var(--r);cursor:pointer;transition:all .15s;background:#0e1117}
+.fqdn-opt:hover{border-color:#4b5563}
+.fqdn-opt.sel{border-color:#1e40af;background:#0f172a}
+.fqdn-opt input{margin-top:2px;accent-color:#185FA5;flex-shrink:0}
+.fqdn-name{font-family:var(--fm);font-size:12px;font-weight:500;color:#93c5fd}
+.fqdn-desc{font-size:11px;color:#6b7280;margin-top:1px}
+.fbadge{margin-left:auto;padding:1px 7px;border-radius:999px;font-size:10px;flex-shrink:0}
+.fb-any{background:#412402;color:#FAC775}.fb-m{background:#042C53;color:#85B7EB}
+.btn-conn{padding:7px 16px;border-radius:var(--r);border:none;background:#185FA5;color:#fff;font-family:var(--ff);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-conn:hover{background:#0C447C}
+.btn-conn:disabled{background:#374151;color:#6b7280;cursor:default}
+
+/* map */
+.map-wrap{border:0.5px solid var(--brd2);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column}
+.map-header{background:var(--bg2);padding:7px 12px;font-size:11px;color:var(--t2);border-bottom:0.5px solid var(--brd);font-family:var(--fm);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.map-body{padding:10px;overflow-y:auto;height:430px;display:flex;flex-direction:column;gap:8px}
+.map-body::-webkit-scrollbar{width:4px}.map-body::-webkit-scrollbar-thumb{background:var(--brd2)}
+.slot-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;border:0.5px solid var(--brd);margin-bottom:4px}
+.sb-seg{transition:flex .6s ease}
+.slot-ticks{display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm);color:var(--t2);margin-bottom:10px}
+.shard-card{border:0.5px solid var(--brd);border-radius:var(--r);overflow:hidden;transition:border-color .4s,box-shadow .4s,opacity .4s;flex-shrink:0}
+.shard-card.highlight{border-color:#1D9E75;box-shadow:0 0 0 2px rgba(29,158,117,.15)}
+.shard-card.warn{border-color:#EF9F27;box-shadow:0 0 0 2px rgba(239,159,39,.15)}
+.shard-card.dead{opacity:.4;border-color:#E24B4A}
+.sh-head{padding:6px 10px;font-size:11px;font-weight:500;border-bottom:0.5px solid var(--brd);display:flex;align-items:center;justify-content:space-between;gap:4px}
+.sh-h1{background:#E6F1FB;color:#042C53}.sh-h2{background:#E1F5EE;color:#04342C}
+.sh-h3{background:#EEEDFE;color:#26215C}.sh-h4{background:#FAEEDA;color:#412402}
+@media(prefers-color-scheme:dark){
+  .sh-h1{background:#042C53;color:#85B7EB}.sh-h2{background:#04342C;color:#5DCAA5}
+  .sh-h3{background:#26215C;color:#AFA9EC}.sh-h4{background:#412402;color:#FAC775}
+}
+.sh-row{padding:4px 10px;font-size:11px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--brd);gap:4px}
+.sh-row:last-child{border-bottom:none}
+.sh-lbl{color:var(--t2);min-width:40px;flex-shrink:0}
+.sh-val{font-family:var(--fm);font-size:11px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbadge{font-size:9px;padding:1px 5px;border-radius:999px;flex-shrink:0;white-space:nowrap}
+.rb-m{background:#E6F1FB;color:#0C447C}.rb-r{background:#F1EFE8;color:#5F5E5A}
+.rb-p{background:#EEEDFE;color:#3C3489}.rb-dead{background:#FCEBEB;color:#791F1F}
+@media(prefers-color-scheme:dark){
+  .rb-m{background:#042C53;color:#85B7EB}.rb-r{background:#2C2C2A;color:#B4B2A9}
+  .rb-p{background:#26215C;color:#AFA9EC}.rb-dead{background:#501313;color:#F09595}
+}
+.ns{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 0 0;font-size:11px;color:var(--t2);border-top:0.5px solid var(--brd);margin-top:10px}
+.li{display:flex;align-items:center;gap:4px}
+.ls{width:10px;height:10px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="page-title">Redis Cluster — Simulador interactivo</h1>
+  <p class="page-sub">Conecta, ejecuta SET/GET y dispara eventos que mutan el cluster en tiempo real.</p>
+
+  <div class="top-bar" id="top-bar">
+    <span class="badge"><span class="dot dot-r"></span>desconectado</span>
+  </div>
+
+  <div class="panel-row">
+    <div class="console-wrap">
+      <div class="con-header">
+        <span class="mac-dot" style="background:#E24B4A"></span>
+        <span class="mac-dot" style="background:#EF9F27"></span>
+        <span class="mac-dot" style="background:#1D9E75"></span>
+        &nbsp;redis-cli — simulador
+      </div>
+      <div class="con-body" id="con-body">
+        <div class="connect-form" id="connect-form">
+          <div class="cf-lbl">Selecciona endpoint y conecta al cluster</div>
+          <div class="fqdn-opts">
+            <label class="fqdn-opt sel" id="opt-g">
+              <input type="radio" name="fqdn" value="generic" checked onchange="selMode('generic')">
+              <div><div class="fqdn-name">clustercfg.redis-cluster.com:6379</div><div class="fqdn-desc">Cualquier nodo — master o réplica</div></div>
+              <span class="fbadge fb-any">any</span>
+            </label>
+            <label class="fqdn-opt" id="opt-m">
+              <input type="radio" name="fqdn" value="master" onchange="selMode('master')">
+              <div><div class="fqdn-name">master.redis-cluster.com:6379</div><div class="fqdn-desc">Solo nodos master</div></div>
+              <span class="fbadge fb-m">master</span>
+            </label>
+          </div>
+          <button class="btn-conn" id="btn-conn" onclick="doConnect()">⚡ Conectar</button>
+        </div>
+      </div>
+      <div class="quick-cmds" id="quick-cmds" style="display:none">
+        <span style="font-size:10px;color:var(--t2)">Ops:</span>
+        <button class="qbtn" onclick="qi('SET user:{100}:name Redis')">SET</button>
+        <button class="qbtn" onclick="qi('GET user:{100}:name')">GET</button>
+        <button class="qbtn" onclick="qi('SET orden:{shop:1}:total 99')">SET orden</button>
+        <button class="qbtn" onclick="qi('GET orden:{shop:1}:total')">GET orden</button>
+        <button class="qbtn" onclick="qi('CLUSTER SLOTS')">CLUSTER SLOTS</button>
+        <button class="qbtn event" onclick="qi('CLUSTER EVENT failover')">⚡ Failover</button>
+        <button class="qbtn event" onclick="qi('CLUSTER EVENT addnode')">＋ Add node</button>
+        <button class="qbtn event" onclick="qi('CLUSTER EVENT delnode')">－ Del node</button>
+        <button class="qbtn event" onclick="qi('CLUSTER EVENT ask')">⟳ ASK</button>
+      </div>
+      <div class="con-input-row" id="con-input-row" style="display:none">
+        <span class="con-prompt" id="con-prompt">127.0.0.1:7000>&nbsp;</span>
+        <input class="con-input" id="con-input" placeholder="SET key value  /  GET key" onkeydown="onKey(event)"/>
+        <button class="con-send" onclick="sendCmd()">↵ Enter</button>
+      </div>
+    </div>
+
+    <div class="map-wrap">
+      <div class="map-header">
+        <span>cluster map</span>
+        <span id="map-ver" style="font-size:10px;font-family:var(--fm)">epoch —</span>
+      </div>
+      <div class="map-body" id="map-body">
+        <div style="color:var(--t2);font-size:12px;padding:2rem 0;text-align:center">Conecta para ver el mapa de slots</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="li"><span class="ls" style="background:#1D9E75"></span>Slot HIT (directo)</div>
+    <div class="li"><span class="ls" style="background:#fb923c"></span>MOVED + reconexión</div>
+    <div class="li"><span class="ls" style="background:#a78bfa"></span>ASK (migración parcial)</div>
+    <div class="li"><span class="ls" style="background:#E24B4A"></span>Nodo caído</div>
+    <div class="li"><span class="ls" style="background:#EF9F27"></span>Evento de mutación</div>
+  </div>
+</div>
+
+<script>
+const SEG_COLS=['#185FA5','#1D9E75','#534AB7','#BA7517'];
+const SH_HEADS=['sh-h1','sh-h2','sh-h3','sh-h4'];
+const MOCK=['"Redis"','"42"','"true"','"active"','"ok"','"2026-03-13"'];
+const HOSTS=['node1:7000','node2:7001','node3:7002','node4:7003'];
+const REPS =['replica1:7010','replica2:7011','replica3:7012','replica4:7013'];
+
+let connMode='generic', bootNode=null, connected=false, epoch=1, askSlot=null, busy=false;
+let shards=mkShards(3);
+
+function mkShards(n){
+  const total=16384, base=Math.floor(total/n), rem=total%n;
+  let cur=0;
+  return Array.from({length:n},(_,i)=>{
+    const sz=base+(i<rem?1:0);
+    const s={id:`s${i+1}`,name:`Shard ${i+1}`,master:HOSTS[i],replica:REPS[i],min:cur,max:cur+sz-1,dead:false,col:i};
+    cur+=sz; return s;
+  });
+}
+
+function rebalance(){
+  const total=16384, n=shards.length, base=Math.floor(total/n), rem=total%n;
+  let cur=0;
+  shards.forEach((s,i)=>{const sz=base+(i<rem?1:0);s.min=cur;s.max=cur+sz-1;cur+=sz;});
+}
+
+function crc16(s){const p=0x1021;let c=0;for(let i=0;i<s.length;i++){c^=(s.charCodeAt(i)<<8);for(let j=0;j<8;j++)c=(c&0x8000)?(c<<1)^p:(c<<1);}return c&0xFFFF;}
+function extractToken(k){const f=k.indexOf('{');if(f===-1)return k;const cl=k.indexOf('}',f+1);if(cl===-1||cl===f+1)return k;return k.slice(f+1,cl);}
+function slotOf(k){return crc16(extractToken(k))%16384;}
+function shardOf(slot){return shards.find(s=>!s.dead&&slot>=s.min&&slot<=s.max);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function pad(n){return String(n).padStart(2,'0');}
+function ts(){const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
+
+function cline(html,cls='cv'){
+  const cb=document.getElementById('con-body');
+  const d=document.createElement('div');d.className=`cl ${cls}`;
+  d.innerHTML=`<span class="ct">${ts()}</span><span style="flex:1;min-width:0;word-break:break-all">${html}</span>`;
+  cb.appendChild(d);cb.scrollTop=cb.scrollHeight;
+}
+const csys =t=>cline(t,'csys');
+const cok  =t=>cline(t,'cok');
+const cerr =t=>cline(t,'cerr');
+const cwarn=t=>cline(t,'cwarn');
+const cmov =t=>cline(t,'cmov');
+const cask =t=>cline(t,'cask');
+const ccmd =t=>cline(t,'cc');
+const cdis =t=>cline(t,'cdisconn');
+const crec =t=>cline(t,'creconn');
+
+function renderMap(hlId=null,warnId=null){
+  const mb=document.getElementById('map-body');
+  const live=shards.filter(s=>!s.dead);
+  const bar=live.map(s=>`<div class="sb-seg" style="flex:${s.max-s.min+1};background:${SEG_COLS[s.col%4]}"></div>`).join('');
+  let ticks='<span>0</span>';
+  live.forEach(s=>{ticks+=`<span>${s.max.toLocaleString('es')}</span>`;});
+  const cards=shards.map(s=>{
+    let cls='shard-card';
+    if(s.id===hlId) cls+=' highlight';
+    else if(s.id===warnId) cls+=' warn';
+    if(s.dead) cls+=' dead';
+    const range=`${s.min.toLocaleString('es')}–${s.max.toLocaleString('es')}`;
+    const count=(s.max-s.min+1).toLocaleString('es');
+    return `<div class="${cls}">
+      <div class="sh-head ${SH_HEADS[s.col%4]}">
+        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
+        ${s.dead?'<span class="rbadge rb-dead">DOWN</span>':`<span style="font-size:9px;opacity:.7;white-space:nowrap">${range}</span>`}
+      </div>
+      <div class="sh-row"><span class="sh-lbl">master</span><span class="sh-val">${esc(s.master)}</span><span class="ns" style="background:${s.dead?'#E24B4A':'#1D9E75'}"></span><span class="rbadge ${s.dead?'rb-dead':'rb-m'}">${s.dead?'dead':'M'}</span></div>
+      <div class="sh-row"><span class="sh-lbl">réplica</span><span class="sh-val">${esc(s.replica)}</span><span class="ns" style="background:#1D9E75"></span><span class="rbadge ${s.dead?'rb-p':'rb-r'}">${s.dead?'→M':'R'}</span></div>
+      <div class="sh-row"><span class="sh-lbl">slots</span><span style="font-family:var(--fm);font-size:10px;color:var(--t2)">${range} <span style="opacity:.6">(${count})</span></span></div>
+    </div>`;
+  }).join('');
+  mb.innerHTML=`<div><div class="slot-bar">${bar}</div><div class="slot-ticks">${ticks}</div></div>${cards}`;
+  document.getElementById('map-ver').textContent=`epoch ${epoch}`;
+}
+
+function updateTopBar(){
+  document.getElementById('top-bar').innerHTML=`
+    <span class="badge"><span class="dot dot-g"></span>conectado · ${esc(bootNode.host)}</span>
+    <span class="badge">epoch ${epoch}</span>
+    <button onclick="doReset()" style="margin-left:auto;padding:3px 9px;border-radius:var(--r);border:0.5px solid var(--brd);background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:var(--ff)">↺ reset</button>`;
+}
+
+function selMode(m){
+  connMode=m;
+  document.getElementById('opt-g').classList.toggle('sel',m==='generic');
+  document.getElementById('opt-m').classList.toggle('sel',m==='master');
+  document.getElementById('opt-g').style.borderColor=m==='generic'?'#1e40af':'#374151';
+  document.getElementById('opt-m').style.borderColor=m==='master'?'#1e40af':'#374151';
+}
+
+async function doConnect(){
+  const btn=document.getElementById('btn-conn');
+  btn.disabled=true; btn.textContent='conectando…';
+  const pool=connMode==='master'
+    ? shards.filter(s=>!s.dead).map(s=>({host:s.master,role:'master'}))
+    : [...shards.filter(s=>!s.dead).map(s=>({host:s.master,role:'master'})),
+       ...shards.filter(s=>!s.dead).map(s=>({host:s.replica,role:'replica'}))];
+  bootNode=rnd(pool);
+  const fqdn=connMode==='generic'?'clustercfg.redis-cluster.com:6379':'master.redis-cluster.com:6379';
+  document.getElementById('connect-form').style.display='none';
+  csys(`Conectando a ${fqdn}…`);
+  await sleep(350);
+  cline(`DNS → <span style="color:#60a5fa">${esc(bootNode.host)}</span> (${bootNode.role})`,'cv');
+  await sleep(300);
+  cok(`✓ TCP OK — conectado a ${bootNode.host}`);
+  await sleep(250);
+  ccmd('> CLUSTER SLOTS');
+  await sleep(450);
+  cok(`✓ Mapa recibido: ${shards.length} shards · ${shards.length*2} nodos · 16384 slots`);
+  await sleep(150);
+  csys('  listo. Usa los botones o escribe un comando.');
+  connected=true;
+  document.getElementById('con-prompt').textContent=`${bootNode.host}> `;
+  document.getElementById('con-input-row').style.display='flex';
+  document.getElementById('quick-cmds').style.display='flex';
+  updateTopBar(); renderMap();
+  document.getElementById('con-input').focus();
+}
+
+function qi(cmd){document.getElementById('con-input').value=cmd;document.getElementById('con-input').focus();}
+function onKey(e){if(e.key==='Enter')sendCmd();}
+
+async function sendCmd(){
+  if(!connected||busy)return;
+  const inp=document.getElementById('con-input');
+  const raw=inp.value.trim(); if(!raw)return;
+  inp.value=''; busy=true;
+  cline(`<span style="color:#4ade80">${esc(bootNode.host)}&gt;</span> <span style="color:#e2e8f0">${esc(raw)}</span>`,'cv');
+  const parts=raw.split(/\s+/), cmd=parts[0].toUpperCase();
+  try{
+    if(cmd==='CLUSTER'&&parts[1]?.toUpperCase()==='EVENT') await handleEvent(parts[2]?.toLowerCase());
+    else if(cmd==='SET'&&parts.length>=3) await handleSet(parts[1],parts.slice(2).join(' '));
+    else if(cmd==='GET'&&parts.length>=2) await handleGet(parts[1]);
+    else if(cmd==='CLUSTER'&&parts[1]?.toUpperCase()==='SLOTS'){
+      await sleep(150);
+      cok(`✓ ${shards.filter(s=>!s.dead).length} shards activos · epoch ${epoch}`);
+      shards.forEach(s=>csys(`  ${s.name}: ${s.master} → slots ${s.min}–${s.max}`));
+      renderMap();
+    } else cerr(`ERR unknown command '${cmd}'`);
+  }finally{busy=false;}
+}
+
+async function doMoved(slot,target){
+  const prev=bootNode.host;
+  cmov(`← MOVED ${slot} ${target.master}`);
+  await sleep(180);
+  cdis(`  desconectando de ${prev}…`);
+  await sleep(280);
+  crec(`  reconectando a ${target.master} (dueño del slot ${slot})…`);
+  await sleep(280);
+  bootNode={host:target.master,role:'master'};
+  document.getElementById('con-prompt').textContent=`${target.master}> `;
+  crec(`  ✓ conexión establecida con ${target.master}`);
+  await sleep(150);
+}
+
+async function handleSet(key,value){
+  const slot=slotOf(key), target=shardOf(slot);
+  if(!target){cerr(`CLUSTERDOWN: sin shard para slot ${slot}`);return;}
+  await sleep(120);
+  if(askSlot!==null&&slot===askSlot){
+    cask(`← ASK ${slot} ${target.master}  (slot en migración)`);
+    await sleep(200); cask(`  reenviando con ASKING — sin actualizar mapa local`); await sleep(250);
+    cok(`OK  [slot ${slot} · ${target.master}]`); renderMap(target.id); return;
+  }
+  if(bootNode.host!==target.master) await doMoved(slot,target);
+  cok(`OK  [slot ${slot} · ${target.master}]`);
+  renderMap(target.id); updateTopBar();
+}
+
+async function handleGet(key){
+  const slot=slotOf(key), target=shardOf(slot);
+  if(!target){cerr(`CLUSTERDOWN: sin shard para slot ${slot}`);return;}
+  await sleep(120);
+  if(askSlot!==null&&slot===askSlot){
+    cask(`← ASK ${slot} ${target.master}  (slot en migración)`);
+    await sleep(200); cask(`  ASKING al nodo destino — cliente NO actualiza mapa`); await sleep(250);
+    cok(`${rnd(MOCK)}  [slot ${slot} · ${target.master}]`); renderMap(target.id); return;
+  }
+  if(bootNode.host!==target.master) await doMoved(slot,target);
+  cok(`${rnd(MOCK)}  [slot ${slot} · ${target.master}]`);
+  renderMap(target.id); updateTopBar();
+}
+
+async function handleEvent(type){
+  epoch++;
+  if(type==='failover')    await evFailover();
+  else if(type==='addnode') await evAddNode();
+  else if(type==='delnode') await evDelNode();
+  else if(type==='ask')     await evAsk();
+  else cerr(`Evento desconocido: '${type}'`);
+}
+
+async function evFailover(){
+  const live=shards.filter(s=>!s.dead);
+  if(!live.length){cerr('Sin shards activos');return;}
+  const v=rnd(live);
+  cwarn(`⚡ FAILOVER — ${v.master} no responde (timeout)`);
+  await sleep(350); v.dead=true; renderMap(null,v.id);
+  await sleep(500); cwarn(`  elección completada — ${v.replica} promovida a master`);
+  await sleep(350);
+  const oldMaster=v.master;
+  v.master=v.replica;
+  v.replica=`new-replica${v.col+1}:${8100+v.col}`;
+  v.dead=false;
+  cok(`✓ Failover OK — ${v.master} sirve slots ${v.min}–${v.max} (epoch ${epoch})`);
+  csys(`  próximo acceso a slots de ${oldMaster} recibirá MOVED → ${v.master}`);
+  if(bootNode.host===oldMaster){
+    cdis(`  desconectando de ${oldMaster} (caído)…`);
+    await sleep(250);
+    crec(`  reconectando al nuevo master ${v.master}…`);
+    await sleep(250);
+    bootNode={host:v.master,role:'master'};
+    document.getElementById('con-prompt').textContent=`${v.master}> `;
+    crec(`  ✓ reconectado a ${v.master}`);
+  }
+  renderMap(v.id); updateTopBar();
+}
+
+async function evAddNode(){
+  if(shards.length>=4){cwarn('Máximo 4 shards en esta demo');return;}
+  const n=shards.length+1;
+  csys(`＋ Agregando ${HOSTS[n-1]} al cluster…`);
+  await sleep(350);
+  shards.push({id:`s${n}`,name:`Shard ${n}`,master:HOSTS[n-1],replica:REPS[n-1],min:0,max:0,dead:false,col:n-1});
+  rebalance();
+  await sleep(400);
+  cwarn(`  reshard: slots redistribuidos equitativamente entre ${n} shards`);
+  await sleep(350);
+  cok(`✓ ${n} shards activos — ~${Math.floor(16384/n).toLocaleString('es')} slots/shard (epoch ${epoch})`);
+  csys(`  llaves afectadas recibirán MOVED al próximo acceso`);
+  renderMap(shards[n-1].id);
+}
+
+async function evDelNode(){
+  if(shards.length<=1){cwarn('Mínimo 1 shard requerido');return;}
+  const v=shards[shards.length-1];
+  csys(`－ Removiendo ${v.name} (${v.master})…`);
+  await sleep(350);
+  cwarn(`  migrando slots de ${v.master} a los shards restantes…`);
+  const removedMaster=v.master;
+  shards.splice(shards.indexOf(v),1);
+  rebalance();
+  await sleep(450);
+  cok(`✓ Nodo removido — ${shards.length} shards activos, ~${Math.floor(16384/shards.length).toLocaleString('es')} slots/shard (epoch ${epoch})`);
+  if(bootNode.host===removedMaster){
+    cdis(`  desconectando de ${removedMaster} (eliminado)…`);
+    await sleep(250);
+    crec(`  reconectando a ${shards[0].master}…`);
+    await sleep(250);
+    bootNode={host:shards[0].master,role:'master'};
+    document.getElementById('con-prompt').textContent=`${shards[0].master}> `;
+    crec(`  ✓ reconectado a ${shards[0].master}`);
+  }
+  renderMap(shards[0].id); updateTopBar();
+}
+
+async function evAsk(){
+  const src=shards[0], dst=shards[1];
+  askSlot=src.min+Math.floor((src.max-src.min)/2);
+  csys(`⟳ Iniciando migración — slot ${askSlot}: ${src.master} → ${dst.master}`);
+  await sleep(350); cwarn(`  MIGRATING slot ${askSlot}…`); await sleep(450);
+  cask(`  durante la migración, ops sobre slot ${askSlot} reciben:`);
+  cask(`  ASK ${askSlot} ${dst.master}`);
+  cask(`  ASK ≠ MOVED: temporal, cliente NO actualiza su mapa local`);
+  await sleep(700);
+  if(askSlot===src.min) src.min=askSlot+1;
+  else src.max=askSlot-1;
+  dst.min=Math.min(dst.min,askSlot);
+  cok(`✓ Migración completa — slot ${askSlot} ahora en ${dst.master} (epoch ${epoch})`);
+  askSlot=null;
+  renderMap(dst.id);
+}
+
+function doReset(){location.reload();}
+</script>
+</body>
+</html>
