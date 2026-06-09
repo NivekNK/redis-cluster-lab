@@ -141,16 +141,10 @@ endif
 	@echo "${GREEN}✅ Cluster detenido${NC}"
 
 status: ## Muestra estado del cluster
-	@echo "${BLUE}📊 Estado del Cluster${NC}"
-	@echo "====================="
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) ps) else (docker compose ps)
+	@powershell.exe -ExecutionPolicy Bypass -File .\scripts\status.ps1
 else
-	@if [ -f $(COMPOSE_FILE) ]; then \
-		docker compose -f $(COMPOSE_FILE) ps; \
-	else \
-		docker compose ps; \
-	fi
+	@./scripts/status.sh
 endif
 
 test: install ## Ejecuta todos los tests
