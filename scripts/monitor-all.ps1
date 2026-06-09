@@ -21,10 +21,10 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     $COLOR = $COLORS[$COLOR_IDX]
 
     if ($i -le $SHARDS) {
-        $LABEL = "M$i:$PORT"
+        $LABEL = "M${i}:${PORT}"
     } else {
         $REPLICA_NUM = $i - $SHARDS
-        $LABEL = "R$REPLICA_NUM:$PORT"
+        $LABEL = "R${REPLICA_NUM}:${PORT}"
     }
 
     # Start a new PowerShell window executing redis-cli MONITOR.

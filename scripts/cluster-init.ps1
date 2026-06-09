@@ -20,7 +20,7 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
             Start-Sleep -Seconds 1
         }
     }
-    Write-Host "  ✅ $NODE:$PORT listo"
+    Write-Host "  ✅ ${NODE}:${PORT} listo"
 }
 
 Write-Host "`n✅ Todos los nodos responden`n"
