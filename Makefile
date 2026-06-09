@@ -4,7 +4,7 @@
 # Uso: make up SHARDS=N  (default: 1, mínimo: 1)
 # Cada shard = 1 master + 1 replica
 
-.PHONY: help up down status test scenarios shell monitor monitor-all reset setup generate scenario-% lab
+.PHONY: help up down status test scenarios shell monitor monitor-all reset setup generate scenario-% lab queues
 
 # Cantidad de shards (masters). Cada shard tiene 1 replica.
 SHARDS ?= 3
@@ -41,11 +41,11 @@ YELLOW :=
 RED := 
 NC := 
 else
-BLUE := \033[36m
-GREEN := \033[32m
-YELLOW := \033[33m
-RED := \033[31m
-NC := \033[0m
+BLUE := $(shell printf '\033[36m')
+GREEN := $(shell printf '\033[32m')
+YELLOW := $(shell printf '\033[33m')
+RED := $(shell printf '\033[31m')
+NC := $(shell printf '\033[0m')
 endif
 
 help: ## Muestra esta ayuda
@@ -74,6 +74,7 @@ help: ## Muestra esta ayuda
 	@echo "  ${YELLOW}monitor-all${NC}      Monitorea TODOS los nodos simultáneamente"
 	@echo "  ${YELLOW}logs${NC}             Muestra logs de todos los nodos"
 	@echo "  ${YELLOW}logs-[N]${NC}         Muestra logs de un nodo específico"
+	@echo "  ${YELLOW}queues${NC}             Lista visualmente las colas del cluster"
 	@echo "  ${YELLOW}reset${NC}            Limpia todo y reinicia (SHARDS=N)"
 	@echo "  ${YELLOW}install${NC}          Instala dependencias PHP localmente"
 	@echo "  ${YELLOW}setup${NC}            Setup inicial completo"
@@ -144,18 +145,12 @@ status: ## Muestra estado del cluster
 	@echo "====================="
 ifeq ($(OS),Windows_NT)
 	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) ps) else (docker compose ps)
-	@echo ""
-	@echo "${BLUE}Nodos del Cluster:${NC}"
-	@powershell -NoProfile -Command "$$out = docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$$null; if ($$LASTEXITCODE -ne 0) { Write-Host 'Cluster no inicializado. Ejecuta: make up' -ForegroundColor Red } else { $$out | Select-Object -First 20 }"
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
 		docker compose -f $(COMPOSE_FILE) ps; \
 	else \
 		docker compose ps; \
 	fi
-	@echo ""
-	@echo "${BLUE}Nodos del Cluster:${NC}"
-	@docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null | head -20 || echo "${RED}Cluster no inicializado. Ejecuta: make up${NC}"
 endif
 
 test: install ## Ejecuta todos los tests
@@ -216,7 +211,7 @@ lab: ## Entra al bash del contenedor redis-lab (tests)
 
 shell: ## Accede a un nodo Redis (nodo 1 por defecto)
 	@echo "${BLUE}🐚 Accediendo a redis-node-1...${NC}"
-	@docker exec -it redis-node-1 redis-cli -p 7000
+	@docker exec -it redis-node-1 redis-cli -c -p 7000
 
 shell-%: ## Accede a un nodo específico (ej: make shell-2)
 	@echo "${BLUE}🐚 Accediendo a redis-node-$*...${NC}"
@@ -289,11 +284,15 @@ setup: ## Setup inicial completo
 	@$(CMD_SETUP)
 
 info: ## Muestra información del cluster
-	@echo "${BLUE}ℹ️  Información del Cluster${NC}"
-	@echo "========================="
-	@echo ""
-	@echo "${GREEN}Slots distribuidos:${NC}"
-	@docker exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS 2>/dev/null || echo "${RED}Cluster no disponible${NC}"
-	@echo ""
-	@echo "${GREEN}Nodos:${NC}"
-	@docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null || echo "${RED}Cluster no disponible${NC}"
+ifeq ($(OS),Windows_NT)
+	@powershell.exe -ExecutionPolicy Bypass -File .\scripts\cluster-info.ps1
+else
+	@./scripts/cluster-info.sh
+endif
+
+queues: ## Lista las colas (queues*) distribuidas en el cluster
+ifeq ($(OS),Windows_NT)
+	@powershell.exe -ExecutionPolicy Bypass -File .\scripts\list-queues.ps1
+else
+	@./scripts/list-queues.sh
+endif

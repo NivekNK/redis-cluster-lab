@@ -144,6 +144,188 @@ make scenario-09
 ```
 Comprende por qué Laravel usa `{default}` en las colas.
 
+## 🐘 Guía para implementar Redis Cluster en Laravel
+
+Si quieres utilizar un clúster de Redis desde tu propia aplicación Laravel, sigue estas importantes reglas y configuraciones:
+
+### 1. Variables de Entorno (`.env`)
+
+- **Cola con Hash Tags:** Tu variable `REDIS_QUEUE` (o la que uses para nombrar la cola) **sí o sí debe tener corchetes**. Esto garantiza que todos los metadatos de la cola se dirijan al mismo hash slot (evitando el error `CROSSSLOT`).
+  ```env
+  REDIS_QUEUE="{default}"
+  ```
+- **Punto de conexión:** `REDIS_HOST` se debe configurar apuntando al Configuration Endpoint (por ejemplo, en AWS ElastiCache) o al entrypoint del cluster, **no a un nodo master directamente** para que pueda descubrir el resto de los nodos automáticamente.
+- **Prefijo:** El `REDIS_PREFIX` debe quedar vacío (`""`) o utilizar un prefijo que *no* tenga corchetes, para evitar que interfiera con los hash tags de las colas.
+
+### 2. Configuración en `config/database.php`
+
+En Laravel, es fundamental indicar en tu configuración que estás utilizando un clúster de Redis. Asegúrate de tener configurado `'client' => env('REDIS_CLIENT', 'predis')` y de especificar la opción `'cluster'` dentro del bloque `options`:
+
+```php
+    'redis' => [
+        'client' => env('REDIS_CLIENT', 'predis'),
+
+        'options' => [
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'prefix' => env('REDIS_PREFIX', ''),
+            'parameters' => [
+                'scheme'   => env('REDIS_SCHEME', 'tcp'),
+                'username' => env('REDIS_USERNAME', null),
+                'password' => env('REDIS_PASSWORD', null),
+            ],
+            'ssl' => [
+                'verify_peer' => env('REDIS_SSL_VERIFY', false),
+            ]
+        ],
+
+        // Configuración en modo clúster
+        'clusters' => (env('REDIS_CLUSTER') == 'redis') ? [
+            'default' => [
+                [
+                    'host'     => env('REDIS_HOST', '127.0.0.1'),
+                    'port'     => env('REDIS_PORT', '6379'),
+                    'database' => env('REDIS_DB', '0'),
+                    'scheme'   => env('REDIS_SCHEME', 'tcp'),
+                    'password' => env('REDIS_PASSWORD', null),
+                    'username' => env('REDIS_USERNAME', null),
+                ],
+            ],
+            'cache' => [
+                [
+                    'host'     => env('REDIS_HOST', '127.0.0.1'),
+                    'port'     => env('REDIS_PORT', '6379'),
+                    'database' => env('REDIS_DB', '0'),
+                    'scheme'   => env('REDIS_SCHEME', 'tcp'),
+                    'password' => env('REDIS_PASSWORD', null),
+                    'username' => env('REDIS_USERNAME', null),
+                ],
+            ],
+            'queue' => [
+                [
+                    'host'     => env('REDIS_QUEUE_HOST', env('REDIS_HOST', '127.0.0.1')),
+                    'port'     => env('REDIS_PORT', '6379'),
+                    'database' => env('REDIS_DB', '0'),
+                    'scheme'   => env('REDIS_SCHEME', 'tcp'),
+                    'password' => env('REDIS_PASSWORD', null),
+                    'username' => env('REDIS_USERNAME', null),
+                ],
+            ],
+        ] : null,
+    ],
+```
+
+### 3. Prueba rápida usando Tinker
+
+Para interactuar con la Caché y enviar tu primer valor al Clúster:
+```bash
+# Ingresar valores a la caché general
+> Cache::store()->put('TESTING', 'value');
+
+# Obtenerlos para verificar que existan
+> Cache::store('redis')->get('TESTING');
+```
+
+**Verificando en el clúster con `redis-cli`:**
+```bash
+# Conectarte con soporte de redirecciones de clúster (-c)
+make shell
+
+# Luego ejecutar:
+127.0.0.1:7000> GET TESTING
+# (Nota: Es muy probable que Laravel le agregue automáticamente el prefijo "laravel_cache_" 
+# a las llaves de caché. Si GET TESTING devuelve nulo, intenta con: GET laravel_cache_:TESTING)
+```
+
+### 4. Uso de Colas (Jobs) en Redis Cluster
+
+Si usas el driver de colas de Redis, para mandar trabajos asegúrate de especificar la conexión a redis:
+```php
+Bus::dispatch((new App\Jobs\TestRedisJob())->onConnection('redis'));
+```
+
+**Ejemplos de Jobs (`App\Jobs\TestRedisJob` y `App\Jobs\DummyJob`):**
+
+```php
+<?php
+namespace App\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+
+class TestRedisJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle()
+    {
+        Log::info('¡El TestRedisJob se ejecutó correctamente desde la cola!');
+    }
+}
+```
+
+```php
+<?php
+namespace App\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+class DummyJob implements ShouldQueue 
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected string $identificador;
+
+    public function __construct(string $identificador = 'Anonimo')
+    {
+        $this->identificador = $identificador;
+    }
+
+     public function handle(): void
+     {
+        Log::info("Contexto de Laboratorio - Job ejecutado exitosamente para: {$this->identificador}");
+
+        $contenido = "Registro de Laboratorio\n" . "Estado: Completado\n" . "Sujeto: {$this->identificador}\n" . "Timestamp: " . now()->toDateTimeString();
+
+        Storage::disk('local')->put("resultado_job_{$this->identificador}.txt", $contenido);
+    }
+}
+```
+
+### 5. Verificando las colas en el Clúster
+
+Con el clúster activo, puedes usar el comando integrado `make queues` que rastreará todos los nodos maestros y sus réplicas, indicándote visualmente en qué nodo se encuentran las llaves de tus trabajos (garantizando que el Hash Tag `{default}` las agrupa todas en un mismo nodo maestro):
+
+```bash
+make queues
+🔍 Escaneando colas en el cluster Redis...
+
+📦 Colas encontradas por nodo:
+--------------------------------------------------------
+[MASTER] redis-node-2
+  ↳ queues:{default}:notify
+  ↳ queues:{default}
+
+✅ Escaneo completado.
+```
+*Puedes ver cómo las colas respetan el Hash Tag para mantenerse en un solo slot.*
+
+### 6. Ejecutar los trabajos
+
+Por último, simplemente enciende tu worker como de costumbre especificando la cola con corchetes (si no es la por defecto):
+```bash
+php artisan queue:work --queue {default}
+```
+
 ## 📖 Documentación
 
 - [Conceptos Fundamentales](docs/01-conceptos.md)

@@ -45,7 +45,8 @@ $COMMENT
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
-      --cluster-announce-ip redis-node-${i}
+      --cluster-announce-hostname redis-node-${i}
+      --cluster-preferred-endpoint-type hostname
       --cluster-announce-port ${PORT}
       --cluster-announce-bus-port ${BUS_PORT}
       --appendonly yes
