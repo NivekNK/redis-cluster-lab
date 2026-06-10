@@ -18,17 +18,17 @@ if [[ $confirm != "y" && $confirm != "Y" ]]; then
 fi
 
 echo "🛑 Deteniendo contenedores..."
-docker compose -f "$COMPOSE_FILE" down -v
+${DOCKER_BIN:-docker} compose -f "$COMPOSE_FILE" down -v
 
 echo "🗑️  Eliminando volúmenes..."
-docker volume prune -f
+${DOCKER_BIN:-docker} volume prune -f
 
 echo "🔧 Regenerando configuración con $SHARDS shards..."
 ./scripts/generate-compose.sh "$SHARDS"
 ./scripts/generate-haproxy.sh "$SHARDS"
 
 echo "🚀 Reiniciando cluster..."
-docker compose -f "$COMPOSE_FILE" up -d
+${DOCKER_BIN:-docker} compose -f "$COMPOSE_FILE" up -d
 
 echo "⏳ Esperando nodos..."
 sleep 3

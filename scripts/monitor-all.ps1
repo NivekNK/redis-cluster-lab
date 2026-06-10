@@ -1,6 +1,8 @@
 param(
     [int]$SHARDS = 3
 )
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 if ($env:SHARDS) { $SHARDS = $env:SHARDS }
 $TOTAL_NODES = $SHARDS * 2
 
@@ -30,7 +32,7 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     # Start a new PowerShell window executing redis-cli MONITOR.
     # The title will reflect the node. Note: Requires redis-cli to be available in PATH.
     $title = "Redis Monitor - $LABEL ($NODE)"
-    $cmd = "docker exec $NODE redis-cli -p $PORT MONITOR"
+    $cmd = "& $DOCKER_BIN exec $NODE redis-cli -p $PORT MONITOR"
     
     Start-Process powershell -ArgumentList "-NoProfile -Command `"`$host.UI.RawUI.WindowTitle = '$title'; Write-Host '--- Monitoreando $LABEL ---' -ForegroundColor $COLOR; $cmd`""
 }

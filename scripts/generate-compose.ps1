@@ -1,6 +1,8 @@
 param(
     [int]$SHARDS = 3
 )
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 $TOTAL_NODES = $SHARDS * 2
 $OUTPUT = "docker-compose.generated.yml"
@@ -47,6 +49,11 @@ $COMMENT
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
+    deploy:
+      resources:
+        limits:
+          cpus: '`${REDIS_CPUS:-0.5}'
+          memory: '`${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -64,6 +71,11 @@ $haproxyConfig = @"
       - `"6381:6381`"
     volumes:
       - ./haproxy.generated.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '`${HAPROXY_CPUS:-0.5}'
+          memory: '`${HAPROXY_MEM_LIMIT:-128m}'
     networks:
       - redis-cluster
     depends_on:
@@ -85,6 +97,11 @@ $labConfig = @"
       - .:/app
     working_dir: /app
     command: tail -f /dev/null
+    deploy:
+      resources:
+        limits:
+          cpus: '`${LAB_CPUS:-0.5}'
+          memory: '`${LAB_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
     depends_on:

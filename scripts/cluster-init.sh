@@ -14,7 +14,7 @@ for i in $(seq 1 "$TOTAL_NODES"); do
     PORT=$((6999 + i))
     NODE="redis-node-${i}"
 
-    until docker exec "$NODE" redis-cli -p "$PORT" PING 2>/dev/null | grep -q "PONG"; do
+    until ${DOCKER_BIN:-docker} exec "$NODE" redis-cli -p "$PORT" PING 2>/dev/null | grep -q "PONG"; do
         echo "  Esperando $NODE en puerto $PORT..."
         sleep 1
     done
@@ -28,8 +28,8 @@ echo "🧹 Limpiando estado previo de los nodos..."
 for i in $(seq 1 "$TOTAL_NODES"); do
     PORT=$((6999 + i))
     NODE="redis-node-${i}"
-    docker exec "$NODE" redis-cli -p "$PORT" FLUSHALL 2>/dev/null || true
-    docker exec "$NODE" redis-cli -p "$PORT" CLUSTER RESET HARD 2>/dev/null || true
+    ${DOCKER_BIN:-docker} exec "$NODE" redis-cli -p "$PORT" FLUSHALL 2>/dev/null || true
+    ${DOCKER_BIN:-docker} exec "$NODE" redis-cli -p "$PORT" CLUSTER RESET HARD 2>/dev/null || true
 done
 echo "✅ Nodos limpios"
 echo ""
@@ -43,7 +43,7 @@ for i in $(seq 1 "$TOTAL_NODES"); do
 done
 
 # Crear el cluster con replicas (SHARDS >= 3 garantizado)
-docker exec redis-node-1 redis-cli --cluster create \
+${DOCKER_BIN:-docker} exec redis-node-1 redis-cli --cluster create \
     $NODES \
     --cluster-replicas 1 \
     --cluster-yes
@@ -52,4 +52,4 @@ echo ""
 echo "✅ Cluster creado exitosamente con $SHARDS shards"
 echo ""
 echo "📊 Distribución de slots:"
-docker exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS
+${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS

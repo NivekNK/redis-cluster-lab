@@ -11,7 +11,7 @@ NC='\033[0m'
 
 echo -e "${BLUE}🔍 Escaneando colas en el cluster Redis...${NC}\n"
 
-NODES_INFO=$(docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null)
+NODES_INFO=$(${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null)
 if [ -z "$NODES_INFO" ] || echo "$NODES_INFO" | grep -q "ERR"; then
     echo -e "${RED}❌ Error: El cluster no está inicializado o no es accesible.${NC}"
     exit 1
@@ -65,7 +65,7 @@ while read -r line; do
     IP=$(echo "$NODE_IP_PORT" | cut -d':' -f1)
     PORT=$(echo "$NODE_IP_PORT" | cut -d':' -f2)
     
-    KEYS=$(docker exec redis-node-1 redis-cli -h "$IP" -p "$PORT" KEYS "queues*" 2>/dev/null | tr -d '\r')
+    KEYS=$(${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -h "$IP" -p "$PORT" KEYS "queues*" 2>/dev/null | tr -d '\r')
     
     if [ -n "$KEYS" ]; then
         FOUND_ANY=1

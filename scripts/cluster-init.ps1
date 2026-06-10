@@ -1,6 +1,8 @@
 param(
     [int]$SHARDS = 3
 )
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 if ($env:SHARDS) { $SHARDS = $env:SHARDS }
 $ErrorActionPreference = "Stop"
 $TOTAL_NODES = $SHARDS * 2
@@ -12,7 +14,7 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     $NODE = "redis-node-$i"
     $ready = $false
     while (-not $ready) {
-        $out = docker exec $NODE redis-cli -p $PORT PING 2>$null
+        $out = & $DOCKER_BIN exec $NODE redis-cli -p $PORT PING 2>$null
         if ($out -match "PONG") {
             $ready = $true
         } else {
@@ -29,8 +31,8 @@ Write-Host "🧹 Limpiando estado previo de los nodos..."
 for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     $PORT = 6999 + $i
     $NODE = "redis-node-$i"
-    try { docker exec $NODE redis-cli -p $PORT FLUSHALL 2>$null } catch {}
-    try { docker exec $NODE redis-cli -p $PORT CLUSTER RESET HARD 2>$null } catch {}
+    try { & $DOCKER_BIN exec $NODE redis-cli -p $PORT FLUSHALL 2>$null } catch {}
+    try { & $DOCKER_BIN exec $NODE redis-cli -p $PORT CLUSTER RESET HARD 2>$null } catch {}
 }
 Write-Host "✅ Nodos limpios`n"
 Write-Host "🔧 Creando cluster con $SHARDS shards..."
@@ -46,4 +48,4 @@ $args = @("exec", "redis-node-1", "redis-cli", "--cluster", "create") + $nodesAr
 
 Write-Host "`n✅ Cluster creado exitosamente con $SHARDS shards`n"
 Write-Host "📊 Distribución de slots:"
-docker exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS
+& $DOCKER_BIN exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS

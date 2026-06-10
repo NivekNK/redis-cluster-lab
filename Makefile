@@ -1,3 +1,11 @@
+# Incluir variables de entorno si existe el archivo
+-include .env
+
+# Defaults para binarios configurables
+DOCKER_BIN ?= docker
+PHP_BIN ?= php
+COMPOSER_BIN ?= composer
+
 # Redis Cluster Laboratory - Makefile
 # Comandos simplificados para el laboratorio
 #
@@ -93,7 +101,7 @@ endif
 
 up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "${BLUE}🚀 Iniciando Redis Cluster con $(SHARDS) shards ($(TOTAL_NODES) nodos)...${NC}"
-	@docker compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
 	@echo "${YELLOW}⏳ Esperando que los nodos estén listos...${NC}"
 ifeq ($(OS),Windows_NT)
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
@@ -128,13 +136,13 @@ endif
 down: ## Detiene el cluster
 	@echo "${BLUE}🛑 Deteniendo cluster...${NC}"
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) down) else (echo ⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml... & docker compose down)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) down) else (echo ⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml... & $(DOCKER_BIN) compose down)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		docker compose -f $(COMPOSE_FILE) down; \
+		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down; \
 	else \
 		echo "${YELLOW}⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml...${NC}"; \
-		docker compose down; \
+		$(DOCKER_BIN) compose down; \
 	fi
 endif
 	@$(CMD_HOSTS_RESTORE)
@@ -149,7 +157,7 @@ endif
 
 test: install ## Ejecuta todos los tests
 	@echo "${BLUE}🧪 Ejecutando tests...${NC}"
-	@docker exec -e SHARDS=$(SHARDS) -it redis-lab php /app/tests/run-all-do.php
+	@$(DOCKER_BIN) exec -e SHARDS=$(SHARDS) -it redis-lab $(PHP_BIN) /app/tests/run-all-do.php
 	@echo "${GREEN}✅ Tests completados${NC}"
 
 scenarios: ## Muestra escenarios disponibles
@@ -186,39 +194,39 @@ scenario-%: install ## Ejecuta un escenario específico (ej: make scenario-01)
 ifeq ($(OS),Windows_NT)
 	@if "$(FILE)"=="" (echo ❌ Escenario $* no existe & exit /b 1)
 	@echo "${YELLOW}📖 Leyendo documentación del escenario...${NC}"
-	@powershell -NoProfile -Command "docker exec redis-lab head -20 /app/tests/$(FILE) 2>$$null | Select-String -Pattern 'ESCENARIO' -Context 0,15 | ForEach-Object { $$_.Line; $$_.Context.PostContext }"
+	@powershell -NoProfile -Command "$(DOCKER_BIN) exec redis-lab head -20 /app/tests/$(FILE) 2>$$null | Select-String -Pattern 'ESCENARIO' -Context 0,15 | ForEach-Object { $$_.Line; $$_.Context.PostContext }"
 else
 	@if [ -z "$(FILE)" ]; then \
 		echo "${RED}❌ Escenario $* no existe${NC}"; \
 		exit 1; \
 	fi
 	@echo "${YELLOW}📖 Leyendo documentación del escenario...${NC}"
-	@docker exec redis-lab head -20 /app/tests/$(FILE) | grep -A 15 "ESCENARIO" || true
+	@$(DOCKER_BIN) exec redis-lab head -20 /app/tests/$(FILE) | grep -A 15 "ESCENARIO" || true
 endif
 	@echo ""
 	@echo "${GREEN}▶ Ejecutando código...${NC}"
-	@docker exec -e SHARDS=$(SHARDS) -it redis-lab php /app/tests/$(FILE)
+	@$(DOCKER_BIN) exec -e SHARDS=$(SHARDS) -it redis-lab $(PHP_BIN) /app/tests/$(FILE)
 
 lab: ## Entra al bash del contenedor redis-lab (tests)
 	@echo "${BLUE}🧪 Accediendo al contenedor de laboratorio (redis-lab)...${NC}"
-	@docker exec -e SHARDS=$(SHARDS) -it redis-lab bash
+	@$(DOCKER_BIN) exec -e SHARDS=$(SHARDS) -it redis-lab bash
 
 shell: ## Accede a un nodo Redis (nodo 1 por defecto)
 	@echo "${BLUE}🐚 Accediendo a redis-node-1...${NC}"
-	@docker exec -it redis-node-1 redis-cli -c -p 7000
+	@$(DOCKER_BIN) exec -it redis-node-1 redis-cli -c -p 7000
 
 shell-%: ## Accede a un nodo específico (ej: make shell-2)
 	@echo "${BLUE}🐚 Accediendo a redis-node-$*...${NC}"
-	@docker exec -it redis-node-$* redis-cli -p $$(($* + 6999))
+	@$(DOCKER_BIN) exec -it redis-node-$* redis-cli -p $$(($* + 6999))
 
 monitor: ## Monitorea comandos en tiempo real (nodo 1)
 	@echo "${BLUE}👁️  Monitoreando redis-node-1...${NC}"
 	@echo "${YELLOW}Presiona Ctrl+C para salir${NC}"
-	@docker exec -it redis-node-1 redis-cli -p 7000 MONITOR
+	@$(DOCKER_BIN) exec -it redis-node-1 redis-cli -p 7000 MONITOR
 
 monitor-%: ## Monitorea un nodo específico
 	@echo "${BLUE}👁️  Monitoreando redis-node-$*...${NC}"
-	@docker exec -it redis-node-$* redis-cli -p $$(($* + 6999)) MONITOR
+	@$(DOCKER_BIN) exec -it redis-node-$* redis-cli -p $$(($* + 6999)) MONITOR
 
 monitor-all: ## Monitorea TODOS los nodos simultáneamente
 	@$(CMD_MONITOR_ALL)
@@ -228,14 +236,14 @@ reset: generate ## Limpia todo y reinicia (SHARDS=N)
 ifeq ($(OS),Windows_NT)
 	@powershell -NoProfile -Command "$$confirm = Read-Host '¿Continuar? [y/N]'; if ($$confirm -notmatch '^y$$|^Y$$') { exit 1 }"
 	@echo "${BLUE}🧹 Limpiando...${NC}"
-	@docker compose -f $(COMPOSE_FILE) down -v
-	@docker compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down -v
+	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
 else
 	@read -p "¿Continuar? [y/N] " confirm && [ $$confirm = y ] || exit 1
 	@echo "${BLUE}🧹 Limpiando...${NC}"
-	@docker compose -f $(COMPOSE_FILE) down -v
-	@docker compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down -v
+	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
 	@sleep 3
 endif
 	@$(CMD_CLUSTER_INIT)
@@ -243,33 +251,33 @@ endif
 
 logs: ## Muestra logs de todos los nodos
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) logs -f) else (docker compose logs -f)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f) else ($(DOCKER_BIN) compose logs -f)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		docker compose -f $(COMPOSE_FILE) logs -f; \
+		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f; \
 	else \
-		docker compose logs -f; \
+		$(DOCKER_BIN) compose logs -f; \
 	fi
 endif
 
 logs-%: ## Muestra logs de un nodo específico
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) (docker compose -f $(COMPOSE_FILE) logs -f redis-node-$*) else (docker compose logs -f redis-node-$*)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f redis-node-$*) else ($(DOCKER_BIN) compose logs -f redis-node-$*)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		docker compose -f $(COMPOSE_FILE) logs -f redis-node-$*; \
+		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f redis-node-$*; \
 	else \
-		docker compose logs -f redis-node-$*; \
+		$(DOCKER_BIN) compose logs -f redis-node-$*; \
 	fi
 endif
 
 install: ## Instala dependencias PHP localmente
 ifeq ($(OS),Windows_NT)
-	@if not exist "vendor" (echo ${BLUE}📦 Instalando dependencias con Composer...${NC} & composer install)
+	@if not exist "vendor" (echo ${BLUE}📦 Instalando dependencias con Composer...${NC} & $(COMPOSER_BIN) install)
 else
 	@if [ ! -d "vendor" ]; then \
 		echo "${BLUE}📦 Instalando dependencias con Composer...${NC}"; \
-		composer install; \
+		$(COMPOSER_BIN) install; \
 	fi
 endif
 

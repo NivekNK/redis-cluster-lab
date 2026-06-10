@@ -1,6 +1,8 @@
 param(
     [int]$SHARDS = 3
 )
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 $TOTAL_NODES = $SHARDS * 2
 $OUTPUT = "haproxy.generated.cfg"

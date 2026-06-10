@@ -55,7 +55,7 @@ for i in $(seq 1 "$TOTAL_NODES"); do
     fi
 
     # Lanzar monitor en background, prefijando cada línea
-    docker exec redis-node-"${i}" redis-cli -p "$PORT" MONITOR 2>/dev/null | \
+    ${DOCKER_BIN:-docker} exec redis-node-"${i}" redis-cli -p "$PORT" MONITOR 2>/dev/null | \
         sed -u "s/^/$(echo -e "${COLOR}")[${LABEL}]$(echo -e "${NC}") /" &
     PIDS+=($!)
 done

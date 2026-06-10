@@ -1,3 +1,5 @@
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 
 Write-Host "`n📊 Estado de Contenedores" -ForegroundColor Cyan
@@ -8,7 +10,7 @@ if (-not (Test-Path $composeFile)) {
     $composeFile = "docker-compose.yml"
 }
 
-$output = docker compose -f $composeFile ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+$output = & $DOCKER_BIN compose -f $composeFile ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 
 foreach ($line in $output) {
     # Remove IPv4 bindings and destination ports

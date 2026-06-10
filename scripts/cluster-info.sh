@@ -10,7 +10,7 @@ NC='\033[0m'
 
 echo -e "${BLUE}ℹ️  Información Topológica del Cluster${NC}\n"
 
-NODES_INFO=$(docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null)
+NODES_INFO=$(${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null)
 if [ -z "$NODES_INFO" ] || echo "$NODES_INFO" | grep -q "ERR"; then
     echo -e "${RED}❌ Error: El cluster no está inicializado o no es accesible.${NC}"
     exit 1

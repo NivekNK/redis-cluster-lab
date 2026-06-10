@@ -4,3 +4,6 @@ haproxy.generated.cfg
 
 # PHP
 /vendor/
+
+# Environment Variables
+.env

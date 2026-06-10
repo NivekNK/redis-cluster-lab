@@ -1,8 +1,10 @@
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 
 Write-Host "`n🔍 Escaneando colas en el cluster Redis...`n" -ForegroundColor Cyan
 
-$nodesInfo = docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$null
+$nodesInfo = & $DOCKER_BIN exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$null
 if (-not $nodesInfo) {
     Write-Host "❌ Error: El cluster no está inicializado o no es accesible." -ForegroundColor Red
     exit 1
@@ -63,7 +65,7 @@ foreach ($line in $nodesInfo) {
     $ip = $ipPort[0]
     $port = $ipPort[1]
     
-    $keys = docker exec redis-node-1 redis-cli -h $ip -p $port KEYS "queues*" 2>$null
+    $keys = & $DOCKER_BIN exec redis-node-1 redis-cli -h $ip -p $port KEYS "queues*" 2>$null
     
     if ($keys) {
         $foundAny = $true

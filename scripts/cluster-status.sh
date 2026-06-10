@@ -7,7 +7,7 @@ echo ""
 
 echo "🖥️  Nodos del Cluster:"
 echo "--------------------"
-docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null | while read line; do
+${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>/dev/null | while read line; do
     node_id=$(echo $line | awk '{print $1}')
     ip=$(echo $line | awk '{print $2}')
     role=$(echo $line | awk '{print $3}')
@@ -28,9 +28,9 @@ done
 echo ""
 echo "🎰 Distribución de Slots:"
 echo "------------------------"
-docker exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS 2>/dev/null | grep -E "^[0-9]|^\[1" | head -20
+${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER SLOTS 2>/dev/null | grep -E "^[0-9]|^\[1" | head -20
 
 echo ""
 echo "📈 Estadísticas:"
 echo "---------------"
-docker exec redis-node-1 redis-cli -p 7000 CLUSTER INFO 2>/dev/null | grep -E "cluster_state|cluster_slots|cluster_known|cluster_size"
+${DOCKER_BIN:-docker} exec redis-node-1 redis-cli -p 7000 CLUSTER INFO 2>/dev/null | grep -E "cluster_state|cluster_slots|cluster_known|cluster_size"

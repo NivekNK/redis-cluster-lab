@@ -1,6 +1,8 @@
 param(
     [int]$SHARDS = 3
 )
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 if ($env:SHARDS) { $SHARDS = $env:SHARDS }
 $TOTAL_NODES = $SHARDS * 2
 

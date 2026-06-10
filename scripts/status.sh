@@ -13,7 +13,7 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     COMPOSE_FILE="docker-compose.yml"
 fi
 
-docker compose -f "$COMPOSE_FILE" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" | \
+${DOCKER_BIN:-docker} compose -f "$COMPOSE_FILE" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" | \
     sed 's/0\.0\.0\.0://g' | \
     sed 's/->[0-9-]*\/tcp//g' | \
     sed 's/, \[::\]:[0-9-]*//g' | \

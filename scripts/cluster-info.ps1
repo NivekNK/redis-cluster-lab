@@ -1,8 +1,10 @@
+
+$DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 
 Write-Host "`nℹ️  Información Topológica del Cluster`n" -ForegroundColor Cyan
 
-$nodesInfo = docker exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$null
+$nodesInfo = & $DOCKER_BIN exec redis-node-1 redis-cli -p 7000 CLUSTER NODES 2>$null
 if (-not $nodesInfo) {
     Write-Host "❌ Error: El cluster no está inicializado o no es accesible." -ForegroundColor Red
     exit 1
