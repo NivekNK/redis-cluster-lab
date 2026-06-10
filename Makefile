@@ -293,7 +293,7 @@ setup: ## Setup inicial completo
 	$(Q)echo "${BLUE}🔧 Setup inicial...${NC}"
 	$(Q)$(CMD_SETUP)
 
-info: ## Muestra información del cluster
+info: ## Muestra información del cluster y endpoints HAProxy
 ifeq ($(OS),Windows_NT)
 	$(Q)powershell.exe -ExecutionPolicy Bypass -File .\scripts\cluster-info.ps1
 else

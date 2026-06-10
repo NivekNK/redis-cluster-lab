@@ -116,7 +116,7 @@ redis-cluster-lab/
 | `make logs-N` | Muestra logs de un nodo específico (ej: `make logs-2`) |
 | `make install` | Instala dependencias PHP localmente (Solo si deseas ejecutar tests locales sin usar docker) |
 | `make setup` | Ejecuta el setup inicial completo |
-| `make info` | Muestra slots y nodos del cluster |
+| `make info` | Muestra slots, nodos y endpoints HAProxy del cluster |
 
 ## 🎯 Escenarios Disponibles
 

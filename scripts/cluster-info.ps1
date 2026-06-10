@@ -12,6 +12,13 @@ if (-not $nodesInfo) {
     exit 1
 }
 
+Write-Host "🔌 Endpoints HAProxy" -ForegroundColor Cyan
+Write-Host "  Master / escritura:   " -NoNewline -ForegroundColor Green
+Write-Host "master.local:6380      (localhost:6380)" -ForegroundColor White
+Write-Host "  Config / discovery:   " -NoNewline -ForegroundColor Yellow
+Write-Host "clustercfg.local:6381  (localhost:6381)" -ForegroundColor White
+Write-Host ""
+
 $colors = @("Green", "Cyan", "Yellow", "Magenta", "Blue", "Red", "DarkGreen", "DarkCyan", "DarkYellow")
 $shardColors = @{}
 $masterNodes = @{}

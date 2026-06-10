@@ -16,6 +16,11 @@ if [ -z "$NODES_INFO" ] || echo "$NODES_INFO" | grep -q "ERR"; then
     exit 1
 fi
 
+echo -e "${BLUE}🔌 Endpoints HAProxy${NC}"
+echo -e "  ${GREEN}Master / escritura${NC}:   master.local:6380      (localhost:6380)"
+echo -e "  ${YELLOW}Config / discovery${NC}:   clustercfg.local:6381  (localhost:6381)"
+echo ""
+
 COLORS=('\033[32m' '\033[36m' '\033[33m' '\033[35m' '\033[34m' '\033[31m' '\033[92m' '\033[96m' '\033[93m')
 declare -A SHARD_COLORS
 declare -A MASTER_NODES
