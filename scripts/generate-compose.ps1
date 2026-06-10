@@ -2,6 +2,8 @@ param(
     [int]$SHARDS = 3
 )
 
+$DOCKER_COMPOSE_BIN = if ($env:DOCKER_COMPOSE_BIN) { $env:DOCKER_COMPOSE_BIN } else { "docker-compose" }
+
 $DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 $ErrorActionPreference = "Stop"
 $TOTAL_NODES = $SHARDS * 2

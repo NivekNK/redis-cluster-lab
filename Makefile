@@ -3,6 +3,7 @@
 
 # Defaults para binarios configurables
 DOCKER_BIN ?= docker
+DOCKER_COMPOSE_BIN ?= docker compose
 PHP_BIN ?= php
 COMPOSER_BIN ?= composer
 
@@ -101,7 +102,7 @@ endif
 
 up: generate ## Inicia el cluster Redis (SHARDS=N)
 	@echo "${BLUE}🚀 Iniciando Redis Cluster con $(SHARDS) shards ($(TOTAL_NODES) nodos)...${NC}"
-	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) up -d
 	@echo "${YELLOW}⏳ Esperando que los nodos estén listos...${NC}"
 ifeq ($(OS),Windows_NT)
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
@@ -136,13 +137,13 @@ endif
 down: ## Detiene el cluster
 	@echo "${BLUE}🛑 Deteniendo cluster...${NC}"
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) down) else (echo ⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml... & $(DOCKER_BIN) compose down)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) down) else (echo ⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml... & $(DOCKER_COMPOSE_BIN) down)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down; \
+		$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) down; \
 	else \
 		echo "${YELLOW}⚠️  No se encontró $(COMPOSE_FILE). Intentando docker-compose.yml...${NC}"; \
-		$(DOCKER_BIN) compose down; \
+		$(DOCKER_COMPOSE_BIN) down; \
 	fi
 endif
 	@$(CMD_HOSTS_RESTORE)
@@ -236,14 +237,14 @@ reset: generate ## Limpia todo y reinicia (SHARDS=N)
 ifeq ($(OS),Windows_NT)
 	@powershell -NoProfile -Command "$$confirm = Read-Host '¿Continuar? [y/N]'; if ($$confirm -notmatch '^y$$|^Y$$') { exit 1 }"
 	@echo "${BLUE}🧹 Limpiando...${NC}"
-	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down -v
-	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) down -v
+	@$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) up -d
 	@powershell -NoProfile -Command "Start-Sleep -Seconds 3"
 else
 	@read -p "¿Continuar? [y/N] " confirm && [ $$confirm = y ] || exit 1
 	@echo "${BLUE}🧹 Limpiando...${NC}"
-	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) down -v
-	@$(DOCKER_BIN) compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) down -v
+	@$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) up -d
 	@sleep 3
 endif
 	@$(CMD_CLUSTER_INIT)
@@ -251,23 +252,23 @@ endif
 
 logs: ## Muestra logs de todos los nodos
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f) else ($(DOCKER_BIN) compose logs -f)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) logs -f) else ($(DOCKER_COMPOSE_BIN) logs -f)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f; \
+		$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) logs -f; \
 	else \
-		$(DOCKER_BIN) compose logs -f; \
+		$(DOCKER_COMPOSE_BIN) logs -f; \
 	fi
 endif
 
 logs-%: ## Muestra logs de un nodo específico
 ifeq ($(OS),Windows_NT)
-	@if exist $(COMPOSE_FILE) ($(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f redis-node-$*) else ($(DOCKER_BIN) compose logs -f redis-node-$*)
+	@if exist $(COMPOSE_FILE) ($(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) logs -f redis-node-$*) else ($(DOCKER_COMPOSE_BIN) logs -f redis-node-$*)
 else
 	@if [ -f $(COMPOSE_FILE) ]; then \
-		$(DOCKER_BIN) compose -f $(COMPOSE_FILE) logs -f redis-node-$*; \
+		$(DOCKER_COMPOSE_BIN) -f $(COMPOSE_FILE) logs -f redis-node-$*; \
 	else \
-		$(DOCKER_BIN) compose logs -f redis-node-$*; \
+		$(DOCKER_COMPOSE_BIN) logs -f redis-node-$*; \
 	fi
 endif
 

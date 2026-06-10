@@ -2,6 +2,8 @@ param(
     [int]$SHARDS = 3
 )
 
+$DOCKER_COMPOSE_BIN = if ($env:DOCKER_COMPOSE_BIN) { $env:DOCKER_COMPOSE_BIN } else { "docker-compose" }
+
 $DOCKER_BIN = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { "docker" }
 if ($env:SHARDS) { $SHARDS = $env:SHARDS }
 $COMPOSE_FILE = "docker-compose.generated.yml"
@@ -17,7 +19,7 @@ if ($confirm -notmatch "^y$|^Y$") {
 }
 
 Write-Host "🛑 Deteniendo contenedores..."
-& $DOCKER_BIN compose -f $COMPOSE_FILE down -v
+Invoke-Expression "$DOCKER_COMPOSE_BIN -f $COMPOSE_FILE down -v"
 
 Write-Host "🗑️  Eliminando volúmenes..."
 & $DOCKER_BIN volume prune -f
@@ -27,7 +29,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS 
 powershell -ExecutionPolicy Bypass -File .\scripts\generate-haproxy.ps1 -SHARDS $SHARDS
 
 Write-Host "🚀 Reiniciando cluster..."
-& $DOCKER_BIN compose -f $COMPOSE_FILE up -d
+Invoke-Expression "$DOCKER_COMPOSE_BIN -f $COMPOSE_FILE up -d"
 
 Write-Host "⏳ Esperando nodos..."
 Start-Sleep -Seconds 3
