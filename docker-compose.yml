@@ -1,3 +1,4 @@
+version: '2.4'
 
 services:
   # Nodos Master
@@ -22,11 +23,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -51,11 +49,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -80,11 +75,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -110,11 +102,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -139,11 +128,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -168,11 +154,8 @@ services:
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '${REDIS_CPUS:-0.5}'
-          memory: '${REDIS_MEM_LIMIT:-256m}'
+    cpus: '${REDIS_CPUS:-0.5}'
+    mem_limit: '${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -184,11 +167,8 @@ services:
       - .:/app
     working_dir: /app
     command: tail -f /dev/null
-    deploy:
-      resources:
-        limits:
-          cpus: '${LAB_CPUS:-0.5}'
-          memory: '${LAB_MEM_LIMIT:-256m}'
+    cpus: '${LAB_CPUS:-0.5}'
+    mem_limit: '${LAB_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
     depends_on:

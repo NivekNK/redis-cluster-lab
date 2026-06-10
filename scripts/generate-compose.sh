@@ -12,6 +12,7 @@ OUTPUT="docker-compose.generated.yml"
 cat > "$OUTPUT" <<'HEADER'
 # ⚠️  Archivo generado automáticamente - No editar manualmente
 # Regenerar con: make generate SHARDS=N
+version: '2.4'
 
 services:
 HEADER
@@ -52,11 +53,8 @@ $COMMENT
       --appendonly yes
       --protected-mode no
       --bind 0.0.0.0
-    deploy:
-      resources:
-        limits:
-          cpus: '\${REDIS_CPUS:-0.5}'
-          memory: '\${REDIS_MEM_LIMIT:-256m}'
+    cpus: '\${REDIS_CPUS:-0.5}'
+    mem_limit: '\${REDIS_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
 
@@ -74,11 +72,8 @@ cat >> "$OUTPUT" <<'HAPROXY_HEADER'
       - "6381:6381"
     volumes:
       - ./haproxy.generated.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
-    deploy:
-      resources:
-        limits:
-          cpus: '${HAPROXY_CPUS:-0.5}'
-          memory: '${HAPROXY_MEM_LIMIT:-128m}'
+    cpus: '${HAPROXY_CPUS:-0.5}'
+    mem_limit: '${HAPROXY_MEM_LIMIT:-128m}'
     networks:
       - redis-cluster
     depends_on:
@@ -100,11 +95,8 @@ cat >> "$OUTPUT" <<'LAB_HEADER'
       - .:/app
     working_dir: /app
     command: tail -f /dev/null
-    deploy:
-      resources:
-        limits:
-          cpus: '${LAB_CPUS:-0.5}'
-          memory: '${LAB_MEM_LIMIT:-256m}'
+    cpus: '${LAB_CPUS:-0.5}'
+    mem_limit: '${LAB_MEM_LIMIT:-256m}'
     networks:
       - redis-cluster
     depends_on:
