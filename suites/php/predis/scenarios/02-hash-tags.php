@@ -49,7 +49,7 @@ function error($msg) {
     echo "{$RED}✗ {$msg}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [
@@ -242,4 +242,4 @@ echo "Si usas '{api-tee}' como prefix para TODAS tus keys,\n";
 echo "¿cuántos slots de los 16384 estarás usando?\n";
 echo "¿Qué implica esto para escalar tu cluster?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-03{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/03-routing{$NC}\n";

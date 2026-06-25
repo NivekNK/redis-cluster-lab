@@ -13,7 +13,12 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     COMPOSE_FILE="docker-compose.yml"
 fi
 
-${DOCKER_COMPOSE_BIN:-docker compose} -f "$COMPOSE_FILE" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" | \
+COMPOSE_ARGS=(-f "$COMPOSE_FILE")
+while IFS= read -r lab_compose; do
+    COMPOSE_ARGS+=(-f "$lab_compose")
+done < <(find suites -mindepth 3 -maxdepth 3 -name docker-compose.lab.yml 2>/dev/null | sort)
+
+${DOCKER_COMPOSE_BIN:-docker compose} "${COMPOSE_ARGS[@]}" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" | \
     sed 's/0\.0\.0\.0://g' | \
     sed 's/->[0-9-]*\/tcp//g' | \
     sed 's/, \[::\]:[0-9-]*//g' | \

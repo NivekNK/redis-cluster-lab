@@ -61,7 +61,7 @@ echo "Las réplicas son solo lectura por diseño.\n\n";
 // Test 1: Identificar masters y réplicas
 section("TEST 1: Topología del Cluster");
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 $client = new Client(clusterNodes(), [
     'cluster' => 'redis'
@@ -287,4 +287,4 @@ echo "\n{$YELLOW}PREGUNTA PARA REFLEXIONAR:{\$NC}\n";
 echo "Si tienes muchas réplicas y quieres distribuir lecturas,\n";
 echo "¿cómo podrías hacerlo sin arriesgarte a escribir en una réplica?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-06{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/06-crossslot-error{$NC}\n";

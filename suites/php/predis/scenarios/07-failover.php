@@ -44,7 +44,7 @@ function error($msg) {
     echo "{$RED}✗ {$msg}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 $client = new Client(clusterNodes(), [
     'cluster' => 'redis'
@@ -169,17 +169,17 @@ section("TEST 5: Instrucciones para Failover Manual");
 echo "{$YELLOW}Para simular un failover real, ejecuta estos comandos:{$NC}\n\n";
 
 echo "1. Identifica un master y su réplica:\n";
-echo "   docker exec -e SHARDS=\$SHARDS -it redis-lab redis-cli -h redis-node-1 -p 7000 CLUSTER NODES\n\n";
+echo "   redis-cli -h redis-node-1 -p 7000 CLUSTER NODES\n\n";
 
 echo "2. Conecta a la réplica:\n";
 $replicaPort = 6999 + shardCount() + 1; // Assuming replica 1 of master 1 is node (shards+1)
-echo "   docker exec -e SHARDS=\$SHARDS -it redis-lab redis-cli -h redis-node-" . (shardCount() + 1) . " -p $replicaPort\n\n";
+echo "   redis-cli -h redis-node-" . (shardCount() + 1) . " -p $replicaPort\n\n";
 
 echo "3. Ejecuta failover manual:\n";
 echo "   CLUSTER FAILOVER\n\n";
 
 echo "4. Verifica el cambio:\n";
-echo "   docker exec -e SHARDS=\$SHARDS -it redis-lab redis-cli -h redis-node-1 -p 7000 CLUSTER NODES\n\n";
+echo "   redis-cli -h redis-node-1 -p 7000 CLUSTER NODES\n\n";
 
 echo "{$CYAN}Observa cómo los puertos de master y replica se intercambian.{$NC}\n";
 
@@ -235,4 +235,4 @@ echo "Si tienes un sistema de pagos y ocurre un failover,\n";
 echo "¿qué estrategia usarías para manejar las operaciones\n";
 echo "que fallan durante el cambio de master?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-08{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/08-queue-patterns{$NC}\n";

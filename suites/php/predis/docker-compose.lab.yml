@@ -1,0 +1,26 @@
+services:
+  redis-lab-php-predis:
+    build:
+      context: ./suites/php/predis
+    image: redis-cluster-lab-php-predis:local
+    container_name: redis-lab-php-predis
+    working_dir: /suite
+    command: tail -f /dev/null
+    environment:
+      SHARDS: '${SHARDS:-3}'
+    volumes:
+      - ./suites/php/predis:/suite
+      - php-predis-vendor:/suite/vendor
+    cpus: '${PREDIS_LAB_CPUS:-1.0}'
+    mem_limit: '${PREDIS_LAB_MEM_LIMIT:-512m}'
+    networks:
+      - redis-cluster
+    depends_on:
+      - haproxy
+
+volumes:
+  php-predis-vendor:
+
+networks:
+  redis-cluster:
+    driver: bridge

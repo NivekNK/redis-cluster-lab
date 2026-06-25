@@ -12,7 +12,12 @@ if (-not (Test-Path $composeFile)) {
     $composeFile = "docker-compose.yml"
 }
 
-$output = Invoke-Expression "$DOCKER_COMPOSE_BIN -f $composeFile ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}""
+$labComposeFiles = Get-ChildItem -Path suites -Recurse -Filter docker-compose.lab.yml -ErrorAction SilentlyContinue |
+    Sort-Object FullName |
+    ForEach-Object { "-f $($_.FullName)" }
+$composeArgs = "-f $composeFile " + ($labComposeFiles -join " ")
+$format = 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
+$output = Invoke-Expression "$DOCKER_COMPOSE_BIN $composeArgs ps --format '$format'"
 
 foreach ($line in $output) {
     # Remove IPv4 bindings and destination ports

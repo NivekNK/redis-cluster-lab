@@ -44,7 +44,7 @@ function success($msg) {
     echo "{$GREEN}✓ {$msg}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [
@@ -186,4 +186,4 @@ echo "\n{$YELLOW}PREGUNTA PARA REFLEXIONAR:{\$NC}\n";
 echo "Si todas tus keys usan el mismo hash tag (ej: {default}),\n";
 echo "¿en cuántos slots caerán? ¿Qué implica esto para el sharding?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-02{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/02-hash-tags{$NC}\n";

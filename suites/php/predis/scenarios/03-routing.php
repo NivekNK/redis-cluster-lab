@@ -49,7 +49,7 @@ function nodeInfo($node) {
     return "{$CYAN}" . $params->host . ":" . $params->port . "{$NC}";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [
@@ -244,4 +244,4 @@ echo "\n{$YELLOW}PREGUNTA PARA REFLEXIONAR:{\$NC}\n";
 echo "Si Predis tiene el mapa desactualizado (ej: después de un failover),\n";
 echo "¿qué crees que pasará cuando intente escribir en un nodo que ya no es master?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-04{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/04-moved-redirects{$NC}\n";

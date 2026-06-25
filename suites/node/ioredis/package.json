@@ -1,0 +1,17 @@
+{
+  "name": "redis-cluster-lab-ioredis",
+  "version": "1.0.0",
+  "description": "Laboratorio pedagogico de Redis Cluster con ioredis",
+  "main": "client.js",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/run-all.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cluster-key-slot": "^1.1.2",
+    "dotenv": "^17.4.2",
+    "ioredis": "^5.9.2"
+  }
+}

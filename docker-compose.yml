@@ -1,5 +1,3 @@
-version: '2.4'
-
 services:
   # Nodos Master
   redis-node-1:
@@ -159,16 +157,17 @@ services:
     networks:
       - redis-cluster
 
-  # Contenedor para ejecutar tests PHP
-  redis-lab:
-    image: php:8.2-cli
-    container_name: redis-lab
+  # HAProxy - Load Balancer
+  haproxy:
+    image: haproxy:2.9-alpine
+    container_name: redis-haproxy
+    ports:
+      - "6380:6380"
+      - "6381:6381"
     volumes:
-      - .:/app
-    working_dir: /app
-    command: tail -f /dev/null
-    cpus: '${LAB_CPUS:-0.5}'
-    mem_limit: '${LAB_MEM_LIMIT:-256m}'
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    cpus: '${HAPROXY_CPUS:-0.5}'
+    mem_limit: '${HAPROXY_MEM_LIMIT:-128m}'
     networks:
       - redis-cluster
     depends_on:

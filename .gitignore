@@ -2,8 +2,10 @@
 docker-compose.generated.yml
 haproxy.generated.cfg
 
-# PHP
+# Dependencias por suite
 /vendor/
+suites/*/*/vendor/
+suites/*/*/node_modules/
 
 # Environment Variables
 .env

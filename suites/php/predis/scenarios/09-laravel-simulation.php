@@ -50,7 +50,7 @@ function metric($label, $value) {
     echo str_pad($label, 35) . " {$CYAN}{$value}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [

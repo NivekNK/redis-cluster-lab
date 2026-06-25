@@ -12,7 +12,6 @@ $OUTPUT = "docker-compose.generated.yml"
 @"
 # ⚠️  Archivo generado automáticamente - No editar manualmente
 # Regenerar con: make generate SHARDS=N
-version: '2.4'
 
 services:
 "@ | Out-File -FilePath $OUTPUT -Encoding ascii
@@ -78,29 +77,6 @@ $haproxyConfig = @"
     depends_on:
 "@
 Add-Content -Path $OUTPUT -Value $haproxyConfig -Encoding ascii
-
-for ($i = 1; $i -le $TOTAL_NODES; $i++) {
-    Add-Content -Path $OUTPUT -Value "      - redis-node-$i" -Encoding ascii
-}
-
-Add-Content -Path $OUTPUT -Value "`n" -Encoding ascii
-
-$labConfig = @"
-  # Contenedor para ejecutar tests PHP
-  redis-lab:
-    image: php:8.2-cli
-    container_name: redis-lab
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: tail -f /dev/null
-    cpus: '`${LAB_CPUS:-0.5}'
-    mem_limit: '`${LAB_MEM_LIMIT:-256m}'
-    networks:
-      - redis-cluster
-    depends_on:
-"@
-Add-Content -Path $OUTPUT -Value $labConfig -Encoding ascii
 
 for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     Add-Content -Path $OUTPUT -Value "      - redis-node-$i" -Encoding ascii

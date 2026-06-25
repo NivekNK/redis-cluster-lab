@@ -50,7 +50,7 @@ function error($msg) {
     echo "{$RED}✗ {$msg}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [
@@ -290,5 +290,4 @@ echo "Si tienes 100 colas diferentes y todas usan hash tags\n";
 echo "diferentes, ¿cómo afecta esto la distribución de carga\n";
 echo "en tu cluster?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-09{$NC}\n";
-
+echo "\n{$GREEN}Próximo escenario: make test php/predis/09-laravel-simulation{$NC}\n";

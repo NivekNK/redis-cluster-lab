@@ -1,0 +1,29 @@
+services:
+  redis-lab-node-ioredis:
+    build:
+      context: ./suites/node/ioredis
+    image: redis-cluster-lab-node-ioredis:local
+    container_name: redis-lab-node-ioredis
+    working_dir: /suite
+    command: tail -f /dev/null
+    environment:
+      REDIS_MODE: '${IOREDIS_REDIS_MODE:-cluster}'
+      REDIS_HOST: '${IOREDIS_REDIS_HOST:-redis-node-1}'
+      REDIS_PORT: '${IOREDIS_REDIS_PORT:-7000}'
+      REDIS_SCHEME: '${IOREDIS_REDIS_SCHEME:-tcp}'
+    volumes:
+      - ./suites/node/ioredis:/suite
+      - node-ioredis-node-modules:/suite/node_modules
+    cpus: '${IOREDIS_LAB_CPUS:-1.0}'
+    mem_limit: '${IOREDIS_LAB_MEM_LIMIT:-512m}'
+    networks:
+      - redis-cluster
+    depends_on:
+      - haproxy
+
+volumes:
+  node-ioredis-node-modules:
+
+networks:
+  redis-cluster:
+    driver: bridge

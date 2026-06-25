@@ -50,7 +50,7 @@ function warning($msg) {
     echo "{$YELLOW}⚠ {$msg}{$NC}\n";
 }
 
-require __DIR__ . '/cluster-config.php';
+require __DIR__ . '/../lib/cluster-config.php';
 
 // Conectar al cluster
 $client = new Client(clusterNodes(), [
@@ -160,7 +160,7 @@ echo "  - Se hace resharding de slots\n";
 echo "  - Se agregan o eliminan nodos\n\n";
 
 echo "{$YELLOW}Para simular esto, necesitaríamos hacer failover manual.{\$NC}\n";
-echo "Lo haremos en el escenario 7 (make scenario-07).\n";
+echo "Lo haremos en el escenario 7 (make test php/predis/07-failover).\n";
 
 // Test 5: MOVED vs ASK
 section("TEST 5: MOVED vs ASK");
@@ -229,4 +229,4 @@ echo "\n{$YELLOW}PREGUNTA PARA REFLEXIONAR:{\$NC}\n";
 echo "Si tu aplicación empieza a ver muchos errores MOVED,\n";
 echo "¿qué podría estar pasando en el cluster?\n";
 
-echo "\n{$GREEN}Próximo escenario: make scenario-05{$NC}\n";
+echo "\n{$GREEN}Próximo escenario: make test php/predis/05-readonly-error{$NC}\n";

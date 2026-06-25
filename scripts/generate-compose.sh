@@ -12,7 +12,6 @@ OUTPUT="docker-compose.generated.yml"
 cat > "$OUTPUT" <<'HEADER'
 # ⚠️  Archivo generado automáticamente - No editar manualmente
 # Regenerar con: make generate SHARDS=N
-version: '2.4'
 
 services:
 HEADER
@@ -84,27 +83,6 @@ for i in $(seq 1 "$TOTAL_NODES"); do
 done
 
 echo "" >> "$OUTPUT"
-
-# Generar servicio redis-lab (PHP test container)
-cat >> "$OUTPUT" <<'LAB_HEADER'
-  # Contenedor para ejecutar tests PHP
-  redis-lab:
-    image: php:8.2-cli
-    container_name: redis-lab
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: tail -f /dev/null
-    cpus: '${LAB_CPUS:-0.5}'
-    mem_limit: '${LAB_MEM_LIMIT:-256m}'
-    networks:
-      - redis-cluster
-    depends_on:
-LAB_HEADER
-
-for i in $(seq 1 "$TOTAL_NODES"); do
-    echo "      - redis-node-${i}" >> "$OUTPUT"
-done
 
 # Generar networks y volumes
 cat >> "$OUTPUT" <<'NETWORKS'

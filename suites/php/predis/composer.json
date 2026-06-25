@@ -1,7 +1,8 @@
 {
-    "name": "redis-cluster-lab/lab",
-    "description": "Laboratorio pedagógico de Redis Cluster",
+    "name": "redis-cluster-lab/predis",
+    "description": "Laboratorio pedagogico de Redis Cluster con Predis",
     "type": "project",
+    "license": "MIT",
     "require": {
         "predis/predis": "^2.0"
     },
@@ -11,6 +12,6 @@
         }
     },
     "scripts": {
-        "test": "php tests/run-all.php"
+        "test": "php scripts/run-all.php"
     }
 }
