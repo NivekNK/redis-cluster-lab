@@ -31,7 +31,7 @@ RUN_ARGS = $(filter-out $@,$(MAKECMDGOALS))
 FIRST_GOAL = $(firstword $(MAKECMDGOALS))
 
 COMPOSE_FILE = docker-compose.generated.yml
-LAB_COMPOSE_FILES = $(shell if [ -d suites ]; then find suites -mindepth 3 -maxdepth 3 -name docker-compose.lab.yml | sort | sed 's#^# -f #'; fi)
+LAB_COMPOSE_FILES = $(shell if [ -d suites ]; then find suites -mindepth 3 -maxdepth 3 -name docker-compose.lab.yml | sort | sed 's/^/ -f /'; fi)
 COMPOSE_FILES = -f $(COMPOSE_FILE) $(LAB_COMPOSE_FILES)
 COMPOSE_FALLBACK_FILES = -f docker-compose.yml $(LAB_COMPOSE_FILES)
 
