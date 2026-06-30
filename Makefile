@@ -23,6 +23,8 @@ export DOCKER_BUILDKIT
 
 SHARDS ?= 3
 export SHARDS
+IP ?=
+export IP
 TOTAL_NODES = $(shell echo $$(($(SHARDS) * 2)))
 
 RUN_ARGS = $(filter-out $@,$(MAKECMDGOALS))
@@ -34,7 +36,7 @@ COMPOSE_FILES = -f $(COMPOSE_FILE) $(LAB_COMPOSE_FILES)
 COMPOSE_FALLBACK_FILES = -f docker-compose.yml $(LAB_COMPOSE_FILES)
 
 ifeq ($(OS),Windows_NT)
-    CMD_GEN_COMPOSE := powershell.exe -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS $(SHARDS)
+    CMD_GEN_COMPOSE := powershell.exe -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS $(SHARDS) -IP "$(IP)"
     CMD_GEN_HAPROXY := powershell.exe -ExecutionPolicy Bypass -File .\scripts\generate-haproxy.ps1 -SHARDS $(SHARDS)
     CMD_CLUSTER_INIT := powershell.exe -ExecutionPolicy Bypass -File .\scripts\cluster-init.ps1 -SHARDS $(SHARDS)
     CMD_HOSTS_APPLY := powershell.exe -ExecutionPolicy Bypass -File .\scripts\hosts-apply.ps1 -SHARDS $(SHARDS)
@@ -42,7 +44,7 @@ ifeq ($(OS),Windows_NT)
     CMD_MONITOR_ALL := powershell.exe -ExecutionPolicy Bypass -File .\scripts\monitor-all.ps1 -SHARDS $(SHARDS)
     CMD_SETUP := powershell.exe -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 else
-    CMD_GEN_COMPOSE := ./scripts/generate-compose.sh $(SHARDS)
+    CMD_GEN_COMPOSE := IP="$(IP)" ./scripts/generate-compose.sh $(SHARDS)
     CMD_GEN_HAPROXY := ./scripts/generate-haproxy.sh $(SHARDS)
     CMD_CLUSTER_INIT := SHARDS=$(SHARDS) ./scripts/cluster-init.sh
     CMD_HOSTS_APPLY := SHARDS=$(SHARDS) ./scripts/hosts-apply.sh

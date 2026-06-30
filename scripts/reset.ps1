@@ -1,6 +1,9 @@
 param(
-    [int]$SHARDS = 3
+    [int]$SHARDS = 3,
+    [string]$IP = ""
 )
+
+if (-not $IP -and $env:IP) { $IP = $env:IP }
 
 $DOCKER_COMPOSE_BIN = if ($env:DOCKER_COMPOSE_BIN) { $env:DOCKER_COMPOSE_BIN } else { "docker-compose" }
 
@@ -26,7 +29,7 @@ Write-Host "🛑 Deteniendo contenedores..."
 Invoke-Expression "$DOCKER_COMPOSE_BIN $COMPOSE_ARGS down -v --remove-orphans"
 
 Write-Host "🔧 Regenerando configuración con $SHARDS shards..."
-powershell -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS $SHARDS
+powershell -ExecutionPolicy Bypass -File .\scripts\generate-compose.ps1 -SHARDS $SHARDS -IP "$IP"
 powershell -ExecutionPolicy Bypass -File .\scripts\generate-haproxy.ps1 -SHARDS $SHARDS
 
 Write-Host "🚀 Reiniciando cluster..."

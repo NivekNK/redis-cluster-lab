@@ -5,7 +5,8 @@
 
 set -e
 
-SHARDS=${1:-1}
+SHARDS=${1:-${SHARDS:-1}}
+IP=${2:-${IP:-}}
 TOTAL_NODES=$((SHARDS * 2))
 OUTPUT="docker-compose.generated.yml"
 
@@ -28,6 +29,14 @@ for i in $(seq 1 "$TOTAL_NODES"); do
         COMMENT="  # Replica $REPLICA_NUM (de Master $REPLICA_NUM)"
     fi
 
+    if [ -n "$IP" ]; then
+        ANNOUNCE_ARGS="--cluster-announce-ip ${IP}
+      --cluster-preferred-endpoint-type ip"
+    else
+        ANNOUNCE_ARGS="--cluster-announce-hostname redis-node-${i}
+      --cluster-preferred-endpoint-type hostname"
+    fi
+
     cat >> "$OUTPUT" <<EOF
 $COMMENT
   redis-node-${i}:
@@ -45,8 +54,7 @@ $COMMENT
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
-      --cluster-announce-hostname redis-node-${i}
-      --cluster-preferred-endpoint-type hostname
+      ${ANNOUNCE_ARGS}
       --cluster-announce-port ${PORT}
       --cluster-announce-bus-port ${BUS_PORT}
       --appendonly yes
@@ -99,4 +107,8 @@ for i in $(seq 1 "$TOTAL_NODES"); do
 done
 echo "" >> "$OUTPUT"
 
-echo "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas)"
+if [ -n "$IP" ]; then
+    echo "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas) [IP pública anunciada: $IP]"
+else
+    echo "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas)"
+fi

@@ -1,6 +1,9 @@
 param(
-    [int]$SHARDS = 3
+    [int]$SHARDS = 3,
+    [string]$IP = ""
 )
+
+if (-not $IP -and $env:IP) { $IP = $env:IP }
 
 $DOCKER_COMPOSE_BIN = if ($env:DOCKER_COMPOSE_BIN) { $env:DOCKER_COMPOSE_BIN } else { "docker-compose" }
 
@@ -27,6 +30,12 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
         $COMMENT = "  # Replica $REPLICA_NUM (de Master $REPLICA_NUM)"
     }
 
+    if ($IP) {
+        $ANNOUNCE_ARGS = "--cluster-announce-ip $IP`n      --cluster-preferred-endpoint-type ip"
+    } else {
+        $ANNOUNCE_ARGS = "--cluster-announce-hostname redis-node-$i`n      --cluster-preferred-endpoint-type hostname"
+    }
+
     $nodeConfig = @"
 $COMMENT
   redis-node-${i}:
@@ -44,8 +53,7 @@ $COMMENT
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
-      --cluster-announce-hostname redis-node-$i
-      --cluster-preferred-endpoint-type hostname
+      $ANNOUNCE_ARGS
       --cluster-announce-port $PORT
       --cluster-announce-bus-port $BUS_PORT
       --appendonly yes
@@ -97,4 +105,8 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
 }
 Add-Content -Path $OUTPUT -Value "`n" -Encoding ascii
 
-Write-Host "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas)"
+if ($IP) {
+    Write-Host "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas) [IP pública anunciada: $IP]"
+} else {
+    Write-Host "✅ Generado $OUTPUT con $SHARDS shards ($TOTAL_NODES nodos: $SHARDS masters + $SHARDS replicas)"
+}

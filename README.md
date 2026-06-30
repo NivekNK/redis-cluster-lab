@@ -82,6 +82,14 @@ docker-compose.generated.yml
 suites/*/*/docker-compose.lab.yml
 ```
 
+Puedes exponer públicamente los nodos pasando la variable `IP`:
+
+```bash
+make up IP=204.0.123.11
+```
+
+Esto configurará `--cluster-announce-ip` y `--cluster-preferred-endpoint-type ip` en cada nodo del cluster para que los clientes externos puedan ser redirigidos de forma transparente a tu IP pública.
+
 Los runners se nombran de forma derivable:
 
 ```text

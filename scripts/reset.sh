@@ -3,6 +3,7 @@
 # Uso: SHARDS=N ./scripts/reset.sh
 
 SHARDS=${SHARDS:-3}
+IP=${IP:-}
 COMPOSE_FILE="docker-compose.generated.yml"
 COMPOSE_ARGS=(-f "$COMPOSE_FILE")
 
@@ -28,7 +29,7 @@ ${DOCKER_COMPOSE_BIN:-docker compose} \
     down -v --remove-orphans
 
 echo "🔧 Regenerando configuración con $SHARDS shards..."
-./scripts/generate-compose.sh "$SHARDS"
+./scripts/generate-compose.sh "$SHARDS" "$IP"
 ./scripts/generate-haproxy.sh "$SHARDS"
 
 echo "🚀 Reiniciando cluster..."
