@@ -88,7 +88,7 @@ Puedes exponer públicamente los nodos pasando la variable `IP`:
 make up IP=204.0.123.11
 ```
 
-Esto configurará `--cluster-announce-ip` y `--cluster-preferred-endpoint-type ip` en cada nodo del cluster para que los clientes externos puedan ser redirigidos de forma transparente a tu IP pública.
+Esto configurará `--cluster-announce-hostname <IP>` y `--cluster-preferred-endpoint-type hostname` en cada nodo del cluster. De esta forma la comunicación interna entre contenedores sigue usando la red bridge local (evitando bloqueos por NAT hairpinning), mientras que los clientes externos reciben tu IP pública al consultar los endpoints del clúster.
 
 Los runners se nombran de forma derivable:
 

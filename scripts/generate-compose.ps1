@@ -31,7 +31,7 @@ for ($i = 1; $i -le $TOTAL_NODES; $i++) {
     }
 
     if ($IP) {
-        $ANNOUNCE_ARGS = "--cluster-announce-ip $IP`n      --cluster-preferred-endpoint-type ip"
+        $ANNOUNCE_ARGS = "--cluster-announce-hostname $IP`n      --cluster-preferred-endpoint-type hostname"
     } else {
         $ANNOUNCE_ARGS = "--cluster-announce-hostname redis-node-$i`n      --cluster-preferred-endpoint-type hostname"
     }

@@ -30,8 +30,8 @@ for i in $(seq 1 "$TOTAL_NODES"); do
     fi
 
     if [ -n "$IP" ]; then
-        ANNOUNCE_ARGS="--cluster-announce-ip ${IP}
-      --cluster-preferred-endpoint-type ip"
+        ANNOUNCE_ARGS="--cluster-announce-hostname ${IP}
+      --cluster-preferred-endpoint-type hostname"
     else
         ANNOUNCE_ARGS="--cluster-announce-hostname redis-node-${i}
       --cluster-preferred-endpoint-type hostname"
